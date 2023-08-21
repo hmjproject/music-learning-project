@@ -1,13 +1,13 @@
-//**********************************************************************************************************
-//* based on audioI2S-- I2S audiodecoder for ESP32, https://github.com/schreibfaul1/ESP32-audioI2S/wiki    *
-//**********************************************************************************************************
-
 #include "Arduino.h" //required for PlatformIO
-
 #include "Audio.h"
 #include "SPI.h"
 #include "SD.h"
 #include "FS.h"
+
+#include <Adafruit_NeoPixel.h>
+#ifdef __AVR__
+  #include <avr/power.h>
+#endif
 
 // Digital I/O used
 #define SD_CS          5
@@ -17,64 +17,26 @@
 #define I2S_DOUT      25
 #define I2S_BCLK      27
 #define I2S_LRC       26
-#define TOUCH_PIN     12
+
+//touch
+#define C_TOUCH_PIN     12
+#define D_TOUCH_PIN     13
 
 const int threshold = 20;
 
+//audio
 Audio audio;
 
-// void setup() {
-//   pinMode(SD_CS, OUTPUT);
-//   digitalWrite(SD_CS, HIGH);
-//   SPI.begin(SPI_SCK, SPI_MISO, SPI_MOSI);
-//   SPI.setFrequency(1000000);
-//   Serial.begin(115200);
-//   delay(1000);
-//   SD.begin(SD_CS);
-//    // a file with the proper name must be placed in root folder of SD card (formatted FAT32, file name max 8 chars no spaces)
-  
-//   //audio.setFileLoop(true); //this causes the file to play in an endless loop
-// }
+//millis
+unsigned long previousMillis = 0, previousMillis2 = 0;
+bool pressed = true;
 
-// void loop()
-// {
-//   //audio.loop();
-//   int state = 1;
-//   int touchValue = touchRead(TOUCH_PIN);
-//   //Serial.print(touchValue);
 
-//   if(touchValue<threshold){
-//     // printf("in touchpad read\n");
-//     if(!audio.isRunning()){
-//       printf("not running \n");
-//       // audio.setFileLoop(true);
-//       audio.setPinout(I2S_BCLK, I2S_LRC, I2S_DOUT);
-//       audio.setVolume(21); // range 0...21 - This is not amplifier gain, but controlling the level of output amplitude. 
+//neopixel
+#define PIN 5
+#define NUMPIXELS 3
+Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
 
-//       audio.connecttoFS(SD, "123_u8.wav");
-//       audio.loop();
-//       printf("started playing sound\n");
-//     }
-//     else{
-//       printf("running \n");
-//       //audio.pauseResume();
-//       // audio.setFileLoop(false);
-//       audio.stopSong();
-//       Serial.println(" - song  off");
-
-//     }
-
-//   }
- 
-//   // if (Serial.available()) { // if any string is sent via serial port
-//   //   audio.stopSong();
-//   //   Serial.println("audio stopped");
-//   //   log_i("free heap=%i", ESP.getFreeHeap()); //available RAM
-//   //   Serial.flush();
-//   // }
-
-//   delay(1000);
-// }
 
 void setup() {
   pinMode(SD_CS, OUTPUT);
@@ -88,32 +50,64 @@ void setup() {
 
   audio.connecttoFS(SD, "123_u8.wav"); // a file with the proper name must be placed in root folder of SD card (formatted FAT32, file name max 8 chars no spaces)
   
-  //audio.setFileLoop(true); //this causes the file to play in an endless loop
   audio.stopSong();
+
+  #if defined(__AVR_ATtiny85__) && (F_CPU == 16000000)
+  clock_prescale_set(clock_div_1);
+  #endif
+  // END of Trinket-specific code.
+
+  pixels.begin(); // INITIALIZE NeoPixel strip object (REQUIRED)
+  pixels.clear();
   delay(1000);
+
 }
 
 void loop()
 {
   audio.loop();
-  int touchValue = touchRead(TOUCH_PIN);
+  unsigned long currentMillis = millis();
+  //read touch val
+  int C_touchValue = touchRead(C_TOUCH_PIN);
+  int D_touchValue = touchRead(D_TOUCH_PIN);
+  //
 
-  if(touchValue<threshold){
-    if(audio.isRunning()){
-      printf("going to stop running audio\n");
-      //audio.pauseResume();
-      // audio.setFileLoop(false);
-      audio.stopSong();
-      Serial.println(" - song  off");
-      delay(1000);
-      printf("finished delay!\n");
-    }
-    else{
+
+  if (currentMillis - previousMillis > 2000 ) {
+    previousMillis = currentMillis; 
+    pixels.setPixelColor(0, pixels.Color(0, 150, 0));
+    pixels.show();
+
+    previousMillis = currentMillis; 
+    pixels.setPixelColor(1, pixels.Color(150, 0, 0));
+    pixels.show();
+    // pressed = false;
+  }
+
+  if(currentMillis - previousMillis2 > 100){
+
+    previousMillis2 = currentMillis; 
+
+    if(C_touchValue < threshold){
+      //audio isn't running -> play audio
       printf("giong to start playing music\n");
-      audio.connecttoFS(SD, "123_u8.wav"); // a file with the proper name must be placed in root folder of SD card (formatted FAT32, file name max 8 chars no spaces)
-      //audio.setFileLoop(true); 
+      // pressed = true;
+      pixels.setPixelColor(0, pixels.Color(0, 0, 0));
+      pixels.show();
+      audio.connecttoFS(SD, "C_major.wav"); // a file with the proper name must be placed in root folder of SD card (formatted FAT32, file name max 8 chars no spaces)
       audio.loop();
-      delay(1000);
+    }
+
+    if(D_touchValue < threshold){
+
+      //audio isn't running -> play audio
+      printf("giong to start playing music\n");
+      // pressed = true;
+      pixels.setPixelColor(1, pixels.Color(0, 0, 0));
+      pixels.show();
+      audio.connecttoFS(SD, "D_major.wav"); // a file with the proper name must be placed in root folder of SD card (formatted FAT32, file name max 8 chars no spaces)
+      audio.loop();
+
     }
   }
  
@@ -123,7 +117,9 @@ void loop()
     log_i("free heap=%i", ESP.getFreeHeap()); //available RAM
     Serial.flush();
   }
-  //delay(1000);
   
 }
 
+
+// void playTone()
+// 
