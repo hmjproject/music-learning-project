@@ -1,4 +1,7 @@
-#include "Arduino.h" //required for PlatformIO
+# 1 "C:\\Users\\miral\\AppData\\Local\\Temp\\tmpro9fwtaa"
+#include <Arduino.h>
+# 1 "C:/Users/miral/Desktop/hmg_git/music-learning-project/sdcard2/src/I2S_audio_SD.ino"
+#include "Arduino.h"
 #include "Audio.h"
 #include "SPI.h"
 #include "SD.h"
@@ -9,38 +12,38 @@
   #include <avr/power.h>
 #endif
 
-// Digital I/O used
-#define SD_CS          5
-#define SPI_MOSI      23
-#define SPI_MISO      19
-#define SPI_SCK       18
-#define I2S_DOUT      25
-#define I2S_BCLK      27
-#define I2S_LRC       26
 
-//touch
-#define C_TOUCH_PIN     12
-#define D_TOUCH_PIN     13
+#define SD_CS 5
+#define SPI_MOSI 23
+#define SPI_MISO 19
+#define SPI_SCK 18
+#define I2S_DOUT 25
+#define I2S_BCLK 27
+#define I2S_LRC 26
+
+
+#define C_TOUCH_PIN 12
+#define D_TOUCH_PIN 13
 
 const int threshold = 20;
 
-//audio
+
 Audio audio;
 
-//millis
+
 unsigned long previousMillis = 0, previousMillis2 = 0;
 bool pressed = true;
 
 
-//neopixel
+
 #define PIN 5
 #define NUMPIXELS 3
 Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
 
-//funcs
+
 void playTone(const char *file_name, int pixel);
 
-//for files
+
 String current_note_string;
 int played;
 int start = true;
@@ -48,8 +51,10 @@ int finished = false;
 File current_file;
 int current_pixel;
 String note_file_name;
-
-
+void setup();
+void loop();
+void playTone(const char *file_name,int pixel);
+#line 53 "C:/Users/miral/Desktop/hmg_git/music-learning-project/sdcard2/src/I2S_audio_SD.ino"
 void setup() {
   pinMode(SD_CS, OUTPUT);
   digitalWrite(SD_CS, HIGH);
@@ -58,18 +63,18 @@ void setup() {
   Serial.begin(115200);
   SD.begin(SD_CS);
   audio.setPinout(I2S_BCLK, I2S_LRC, I2S_DOUT);
-  audio.setVolume(12); // range 0...21 - This is not amplifier gain, but controlling the level of output amplitude. 
+  audio.setVolume(12);
 
-  audio.connecttoFS(SD, "123_u8.wav"); // a file with the proper name must be placed in root folder of SD card (formatted FAT32, file name max 8 chars no spaces)
-  
+  audio.connecttoFS(SD, "123_u8.wav");
+
   audio.stopSong();
 
   #if defined(__AVR_ATtiny85__) && (F_CPU == 16000000)
   clock_prescale_set(clock_div_1);
   #endif
-  // END of Trinket-specific code.
 
-  pixels.begin(); // INITIALIZE NeoPixel strip object (REQUIRED)
+
+  pixels.begin();
   pixels.clear();
   delay(1000);
 
@@ -77,17 +82,17 @@ void setup() {
 
 void loop()
 {
-  
+
   audio.loop();
   unsigned long currentMillis = millis();
 
   if(start){
-    //open file
+
     current_file= SD.open("/music_sheets/song1.txt");
-    //get first note
+
     current_note_string = current_file.readStringUntil('\n');
-    //continue to play
-    //update start
+
+
     start = false;
 
     if(current_note_string == "C\r"){
@@ -105,27 +110,27 @@ void loop()
 
   if(!finished){
 
-    //read touch val
+
     int C_touchValue = touchRead(C_TOUCH_PIN);
     int D_touchValue = touchRead(D_TOUCH_PIN);
-    
-    //
+
+
 
 
     if (currentMillis - previousMillis > 2000 ) {
-      previousMillis = currentMillis; 
+      previousMillis = currentMillis;
       pixels.setPixelColor(current_pixel, pixels.Color(0, 150, 0));
       pixels.show();
 
-      // previousMillis = currentMillis; 
-      // pixels.setPixelColor(1, pixels.Color(150, 0, 0));
-      // pixels.show();
-      // pressed = false;
+
+
+
+
     }
 
     if(currentMillis - previousMillis2 > 200){
 
-      previousMillis2 = currentMillis; 
+      previousMillis2 = currentMillis;
 
       if(C_touchValue < threshold){
         if(current_pixel==0){
@@ -150,7 +155,7 @@ void loop()
       }
 
       if(D_touchValue < threshold){
-        // playTone("D_major.wav",1);
+
         if(current_pixel==1){
           playTone("D_major.wav",1);
           current_note_string = current_file.readStringUntil('\n');
@@ -172,24 +177,23 @@ void loop()
         }
       }
     }
-  
-    if (Serial.available()) { // if any string is sent via serial port
+
+    if (Serial.available()) {
       audio.stopSong();
       Serial.println("audio stopped");
-      log_i("free heap=%i", ESP.getFreeHeap()); //available RAM
+      log_i("free heap=%i", ESP.getFreeHeap());
       Serial.flush();
     }
   }
-  
+
 }
 
 
 void playTone(const char *file_name,int pixel){
   printf("giong to start playing music\n");
-  // pressed = true;
+
   pixels.setPixelColor(pixel, pixels.Color(0, 0, 0));
   pixels.show();
   audio.connecttoFS(SD,file_name);
   audio.loop();
 }
-
