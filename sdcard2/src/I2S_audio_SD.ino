@@ -22,7 +22,7 @@
 #define C_TOUCH_PIN     12
 #define D_TOUCH_PIN     13
 
-const int threshold = 20;
+const int threshold = 35;
 
 //audio
 Audio audio;
@@ -33,8 +33,8 @@ bool pressed = true;
 
 
 //neopixel
-#define PIN 5
-#define NUMPIXELS 3
+#define PIN 4
+#define NUMPIXELS 8
 Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
 
 //funcs
@@ -42,11 +42,11 @@ void playTone(const char *file_name, int pixel);
 
 //for files
 String current_note_string;
-int played;
+int played = 0;
 int start = true;
 int finished = false;
 File current_file;
-int current_pixel;
+int current_pixel = 0;
 String note_file_name;
 
 
@@ -86,6 +86,7 @@ void loop()
     current_file= SD.open("/music_sheets/song1.txt");
     //get first note
     current_note_string = current_file.readStringUntil('\n');
+
     //continue to play
     //update start
     start = false;
@@ -100,77 +101,64 @@ void loop()
       finished = true;
       printf("done playing \n");
     }
+    played = 0;
 
   }
 
   if(!finished){
 
     //read touch val
-    int C_touchValue = touchRead(C_TOUCH_PIN);
-    int D_touchValue = touchRead(D_TOUCH_PIN);
-    
-    //
 
 
-    if (currentMillis - previousMillis > 2000 ) {
-      previousMillis = currentMillis; 
-      pixels.setPixelColor(current_pixel, pixels.Color(0, 150, 0));
-      pixels.show();
+    if (currentMillis - previousMillis2 > 200 ) {
 
-      // previousMillis = currentMillis; 
-      // pixels.setPixelColor(1, pixels.Color(150, 0, 0));
-      // pixels.show();
-      // pressed = false;
-    }
-
-    if(currentMillis - previousMillis2 > 200){
-
-      previousMillis2 = currentMillis; 
-
+      int C_touchValue = touchRead(C_TOUCH_PIN);
+      int D_touchValue = touchRead(D_TOUCH_PIN);
       if(C_touchValue < threshold){
-        if(current_pixel==0){
-          playTone("C_major.wav",0);
-          current_note_string = current_file.readStringUntil('\n');
-
-          if(current_note_string == "C\r"){
-            current_pixel = 0;
-          }
-          else if(current_note_string == "D\r"){
-            current_pixel = 1;
-          }
-          else if(current_note_string == "NULL\r"){
-            finished = true;
-            printf("done playing \n");
-          }
-
-        }
-        else{
+        if(current_pixel !=0){
           printf("wrong note\n");
         }
+        else if(!played){
+          playTone("C_major.wav",1);
+          played=1;
+        }
+
       }
 
       if(D_touchValue < threshold){
-        // playTone("D_major.wav",1);
-        if(current_pixel==1){
-          playTone("D_major.wav",1);
-          current_note_string = current_file.readStringUntil('\n');
-
-          if(current_note_string == "C\r"){
-            current_pixel = 0;
-          }
-          else if(current_note_string == "D\r"){
-            current_pixel = 1;
-          }
-          else if(current_note_string == "NULL\r"){
-            finished = true;
-            printf("done playing \n");
-          }
-
-        }
-        else{
+        if(current_pixel !=1){
           printf("wrong note\n");
         }
+        else if(!played){
+          playTone("D_major.wav",1);
+          played=1;
+        }
       }
+
+    }
+
+    if(currentMillis - previousMillis2 > 3000){
+
+      previousMillis2 = currentMillis; 
+      pixels.setPixelColor(current_pixel, pixels.Color(0, 0, 0));
+      pixels.show();
+
+      //read next note
+      current_note_string = current_file.readStringUntil('\n');
+      if(current_note_string == "C\r"){
+        current_pixel = 0;
+      }
+      else if(current_note_string == "D\r"){
+        current_pixel = 1;
+      }
+      else if(current_note_string == "NULL\r"){
+        finished = true;
+        printf("done playing \n");
+      }
+      pixels.setPixelColor(current_pixel, pixels.Color(0, 200, 150));
+      pixels.show();
+      played = 0;
+
     }
   
     if (Serial.available()) { // if any string is sent via serial port
@@ -180,15 +168,17 @@ void loop()
       Serial.flush();
     }
   }
-  
+  if(finished)
+  {for(int i = 0; i < 2; i++){
+    pixels.setPixelColor(i, pixels.Color(0, 0, 0));
+    pixels.show();
+  }}
 }
 
 
 void playTone(const char *file_name,int pixel){
   printf("giong to start playing music\n");
   // pressed = true;
-  pixels.setPixelColor(pixel, pixels.Color(0, 0, 0));
-  pixels.show();
   audio.connecttoFS(SD,file_name);
   audio.loop();
 }
