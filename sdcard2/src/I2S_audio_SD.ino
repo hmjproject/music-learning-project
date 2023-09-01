@@ -21,6 +21,11 @@
 //touch
 #define C_TOUCH_PIN     12
 #define D_TOUCH_PIN     13
+#define E_TOUCH_PIN     14
+#define F_TOUCH_PIN     33
+#define G_TOUCH_PIN     32
+#define A_TOUCH_PIN     15
+#define B_TOUCH_PIN     4
 
 const int threshold = 35;
 
@@ -33,7 +38,7 @@ bool pressed = true;
 
 
 //neopixel
-#define PIN 4
+#define PIN 22
 #define NUMPIXELS 8
 Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
 
@@ -85,57 +90,15 @@ void loop()
     //open file
     current_file= SD.open("/music_sheets/song1.txt");
     //get first note
-    current_note_string = current_file.readStringUntil('\n');
 
     //continue to play
     //update start
     start = false;
-
-    if(current_note_string == "C\r"){
-      current_pixel = 0;
-    }
-    else if(current_note_string == "D\r"){
-      current_pixel = 1;
-    }
-    else if(current_note_string == "NULL\r"){
-      finished = true;
-      printf("done playing \n");
-    }
     played = 0;
 
   }
 
   if(!finished){
-
-    //read touch val
-
-
-    if (currentMillis - previousMillis2 > 200 ) {
-
-      int C_touchValue = touchRead(C_TOUCH_PIN);
-      int D_touchValue = touchRead(D_TOUCH_PIN);
-      if(C_touchValue < threshold){
-        if(current_pixel !=0){
-          printf("wrong note\n");
-        }
-        else if(!played){
-          playTone("C_major.wav",1);
-          played=1;
-        }
-
-      }
-
-      if(D_touchValue < threshold){
-        if(current_pixel !=1){
-          printf("wrong note\n");
-        }
-        else if(!played){
-          playTone("D_major.wav",1);
-          played=1;
-        }
-      }
-
-    }
 
     if(currentMillis - previousMillis2 > 3000){
 
@@ -146,20 +109,130 @@ void loop()
       //read next note
       current_note_string = current_file.readStringUntil('\n');
       if(current_note_string == "C\r"){
+        printf("got c\n");
         current_pixel = 0;
       }
       else if(current_note_string == "D\r"){
+        printf("got D\n");
+
         current_pixel = 1;
       }
+      else if(current_note_string == "E\r"){
+        printf("got E\n");
+
+        current_pixel = 2;
+      }
+      else if(current_note_string == "F\r"){
+        printf("got F\n");
+
+        current_pixel = 3;
+      }
+      else if(current_note_string == "G\r"){
+        printf("got G\n");
+
+        current_pixel = 4;
+      }
+      else if(current_note_string == "A\r"){
+        printf("got A\n");
+
+        current_pixel = 5;
+      }
+      else if(current_note_string == "B\r"){
+        printf("got B\n");
+
+        current_pixel = 6;
+      }
       else if(current_note_string == "NULL\r"){
+        printf("got null\n");
+      }
+      else if(current_note_string == "END\r"){
         finished = true;
-        printf("done playing \n");
       }
       pixels.setPixelColor(current_pixel, pixels.Color(0, 200, 150));
       pixels.show();
       played = 0;
 
     }
+
+    if (currentMillis - previousMillis2 > 200 ) {
+
+      int C_touchValue = touchRead(C_TOUCH_PIN);
+      int D_touchValue = touchRead(D_TOUCH_PIN);
+      int E_touchValue = touchRead(E_TOUCH_PIN);
+      int F_touchValue = touchRead(F_TOUCH_PIN);
+      int G_touchValue = touchRead(G_TOUCH_PIN);
+      int A_touchValue = touchRead(A_TOUCH_PIN);
+      int B_touchValue = touchRead(B_TOUCH_PIN);
+      if(C_touchValue < threshold){
+        if(current_pixel !=0){
+          printf("C wrong note\n");
+        }
+        else if(!played){
+          playTone("C_major.wav",1);
+          played=1;
+        }
+
+      }
+
+      if(D_touchValue < threshold){
+        if(current_pixel !=1){
+          printf("D wrong note\n");
+        }
+        else if(!played){
+          playTone("D_major.wav",1);
+          played=1;
+        }
+      }
+
+      if(E_touchValue < threshold){
+        if(current_pixel != 2){
+          printf("E wrong note\n");
+        }
+        else if(!played){
+          playTone("E_major.wav",1);
+          played=1;
+        }
+      }
+      if(F_touchValue < threshold){
+        if(current_pixel != 3){
+          printf("F wrong note\n");
+        }
+        else if(!played){
+          playTone("F_major.wav",1);
+          played=1;
+        }
+      }
+      if(G_touchValue < threshold){
+        if(current_pixel != 4){
+          printf("G wrong note\n");
+        }
+        else if(!played){
+          playTone("G_major.wav",1);
+          played=1;
+        }
+      }
+      if(A_touchValue < threshold){
+        if(current_pixel !=5){
+          printf("A wrong note\n");
+        }
+        else if(!played){
+          playTone("A_major.wav",1);
+          played=1;
+        }
+      }
+
+      if(B_touchValue < threshold){
+        if(current_pixel != 6){
+          printf("B wrong note\n");
+        }
+        else if(!played){
+          playTone("B_major.wav",1);
+          played=1;
+        }
+      }
+
+    }
+
   
     if (Serial.available()) { // if any string is sent via serial port
       audio.stopSong();
@@ -169,10 +242,12 @@ void loop()
     }
   }
   if(finished)
-  {for(int i = 0; i < 2; i++){
-    pixels.setPixelColor(i, pixels.Color(0, 0, 0));
-    pixels.show();
-  }}
+  {
+    for(int i = 0; i < 2; i++){
+      pixels.setPixelColor(i, pixels.Color(0, 0, 0));
+      pixels.show();
+    }
+  }
 }
 
 
