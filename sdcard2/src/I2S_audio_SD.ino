@@ -72,6 +72,12 @@ Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
 //funcs
 void playTone(const char *file_name, int pixel);
 void check_touch_values();
+void turn_off_lights();
+void play_music();
+void reconnect_to_wifi();
+void turn_off_lights();
+void turn_lights_red();
+void turn_lights_green();
 
 //for files
 String current_note_string;
@@ -115,6 +121,7 @@ void handleNewMessages(int numNewMessages) {
       playing_music = true;
       bot.sendMessage(chat_id, "going to play music!", "");
       start = true;
+      finished = false;
     }
 
   }
@@ -168,7 +175,14 @@ void setup() {
 void loop()
 {
   audio.loop();
+  
+
   if(!playing_music){
+    for(int i = 0; i < 8; i++){
+      pixels.setPixelColor(i, pixels.Color(0, 0, 0));
+      pixels.show();
+    }
+    
     if (millis() > lastTimeBotRan + botRequestDelay)  {
       int numNewMessages = bot.getUpdates(bot.last_message_received + 1);
       printf("num of new messages is %d\n",numNewMessages);
@@ -180,8 +194,27 @@ void loop()
       lastTimeBotRan = millis();
     }
   }
-  if(playing_music == true){
-    audio.loop();
+  if(playing_music){
+    play_music();
+
+    if(finished){
+      bot.sendMessage(CHAT_ID, "Done playing!", "");
+    }
+
+  }
+  
+}
+
+
+void playTone(const char *file_name,int pixel){
+  printf("giong to start playing music\n");
+  // pressed = true;
+  audio.connecttoFS(SD,file_name);
+  audio.loop();
+}
+
+void play_music(){
+  audio.loop();
     unsigned long currentMillis = millis();
     // String prev_note = "G\r";
     if(start){
@@ -193,12 +226,9 @@ void loop()
 
     }
 
-    if(currentMillis - previousMillis2 > 1500){
+    if(currentMillis - previousMillis2 > 1200){
       //turn off previous pexil
-      for(int i = 0; i < 8; i++){
-        pixels.setPixelColor(i, pixels.Color(0, 0, 0));
-        pixels.show();
-      }
+      turn_off_lights();
 
       previousMillis2 = currentMillis; 
       //read next note
@@ -232,27 +262,19 @@ void loop()
         current_pixel = 1;
       }
       else if(current_note_string == "NULL\r"){
-        for(int i = 0; i < 8; i++){
-          pixels.setPixelColor(i, pixels.Color(0, 0, 0));
-          pixels.show();
-        }
+        turn_off_lights();
         current_pixel = 20;
-
       }
       else if(current_note_string == "END\r"){
+        turn_off_lights();
         finished = true;
-        for(int i = 0; i < 8; i++){
-          pixels.setPixelColor(i, pixels.Color(0, 0, 0));
-          pixels.show();
-        }
         playing_music = false;
-        bot.sendMessage(CHAT_ID, "Done playing!", "");
         current_pixel = 20;
-
+        audio.stopSong();
       }
       if(current_note_string != "NULL\r" && current_note_string != "END\r")
       {
-        // printf("turn on current pixel \n");
+        printf("turn on current pixel %d \n", current_pixel);
         pixels.setPixelColor(current_pixel, pixels.Color(0, 200, 150));
         pixels.show();
       }
@@ -351,28 +373,14 @@ void loop()
 
     }
 
-  
     if (Serial.available()) { // if any string is sent via serial port
       audio.stopSong();
       Serial.println("audio stopped");
       log_i("free heap=%i", ESP.getFreeHeap()); //available RAM
       Serial.flush();
     }
-
-    // prev_note = current_note_string;
-
-  
-  }
-  
 }
 
-
-void playTone(const char *file_name,int pixel){
-  printf("giong to start playing music\n");
-  // pressed = true;
-  audio.connecttoFS(SD,file_name);
-  audio.loop();
-}
 
 void check_touch_values(){
 
@@ -486,4 +494,46 @@ void check_touch_values(){
     }
   }
 
+}
+
+
+void reconnect_to_wifi(){
+  int status = WL_IDLE_STATUS;
+  while (status != WL_CONNECTED) {
+    status = WiFi.begin(ssid, password);
+    // Serial.print(".");
+    printf("reconnecting...\n");
+    delay(300);
+  }
+}
+
+void check_wifi_connection(){
+  if (WiFi.status() != WL_CONNECTED){
+    turn_lights_red();
+    reconnect_to_wifi();
+    turn_lights_green();
+    delay(200);
+    turn_off_lights();
+  }
+}
+
+void turn_off_lights(){
+  for(int i = 0; i < 8; i++){
+    pixels.setPixelColor(i, pixels.Color(0, 0, 0));
+    pixels.show();
+  }
+}
+
+void turn_lights_red(){
+  for(int i = 0; i < 8; i++){
+    pixels.setPixelColor(i, pixels.Color(100, 0, 0));
+    pixels.show();
+  }
+}
+
+void turn_lights_green(){
+  for(int i = 0; i < 8; i++){
+    pixels.setPixelColor(i, pixels.Color(0, 100, 0));
+    pixels.show();
+  }
 }
