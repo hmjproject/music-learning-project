@@ -47,11 +47,14 @@ unsigned long lastTimeBotRan;
 //touch threshold
 const int threshold = 35;
 
+//touch sensors array
+bool touch_sensor_val[7] = {0,0,0,0,0,0,0};
+
 //audio
 Audio audio;
 
 //millis
-unsigned long previousMillis = 0, previousMillis2 = 0;
+unsigned long touch_sensor_millis = 0, touch_sensor_millis_1 = 0, note_read_millis = 0;
 bool pressed = true;
 
 
@@ -72,7 +75,8 @@ void turn_lights_green();
 
 //for files
 String current_note_string;
-int played = 0;
+int current_note_played = 0;
+bool note_played_in_epsilon_time = false;
 int start = true;
 int finished = false;
 File current_file;
@@ -82,10 +86,14 @@ int playing_music = false;
 String file_name = "";
 
 // long note
-int led_state = 0;
+bool long_note = false;
 
 //volume
 int volume = 18;
+
+//statistics
+int wrong_notes = 0;
+int delayed_notes = 0;
 
 void handleNewMessages(int numNewMessages) {
   Serial.println("handleNewMessages");
@@ -282,15 +290,16 @@ void play_music(){
       } 
       //update start
       start = false;
-      played = 0;
-
+      current_note_played = 0;
+      // note_played_in_epsilon_time = true;
     }
 
-    if(currentMillis - previousMillis2 > 1200){
+    if(currentMillis - note_read_millis > 1200){
+      
       //turn off previous pexil
       turn_off_lights();
 
-      previousMillis2 = currentMillis; 
+      note_read_millis = currentMillis; 
       //read next note
       current_note_string = current_file.readStringUntil('\n');
 
@@ -340,11 +349,54 @@ void play_music(){
         pixels.setPixelColor(current_pixel, pixels.Color(0, 200, 150));
         pixels.show();
       }
-      played = 0;
+      current_note_played = 0;
 
     }
 
-    if (currentMillis - previousMillis2 > 30 ) {
+    // if the right sensor is touched within 300ms, the note is considered to be played successfully
+    // if the right sensor was touched after 300ms from reading the note, it is considered to be a missed/delayed note
+    //if a wrong sensor was touched after 300ms from reading the note, it is considered a fail
+
+    if (!current_note_played && (currentMillis - touch_sensor_millis_1 > 30) && currentMillis - note_read_millis < 300 ) {
+      touch_sensor_millis = currentMillis;
+      read_touch_sensors();
+      // is the right note pressed?
+      if(touch_sensor_val[current_note_played]){
+        // play note
+        play_note(current_pixel);
+        // update that note has been read
+        current_note_played = 1;
+      }
+    }
+
+    // after 300ms, note hasn't been played
+    if (!current_note_played && (currentMillis - touch_sensor_millis_1 > 30) && currentMillis - note_read_millis > 300 ) {
+      touch_sensor_millis = currentMillis;
+      read_touch_sensors();
+      // is the right note pressed?
+      if(touch_sensor_val[current_note_played]){
+        // play note
+        play_note(current_pixel);
+        // update that note has been played
+        current_note_played = 1;
+        delayed_notes++;
+      }
+      else{
+        for(int i = 0; i < 7; i++){
+          if(touch_sensor_val[i]){
+            // play note that was pressed
+            play_note(i);
+            // update wrong notes number
+            wrong_notes++;
+          }
+        }
+      }
+    }
+
+
+    //once the note has been played, make sure no wrong note is played every 30ms
+    if (current_note_played && currentMillis - touch_sensor_millis > 30 ) {
+      touch_sensor_millis = currentMillis;
       int C_touchValue = touchRead(C_TOUCH_PIN);
       int D_touchValue = touchRead(D_TOUCH_PIN);
       int E_touchValue = touchRead(E_TOUCH_PIN);
@@ -356,9 +408,9 @@ void play_music(){
         if(current_pixel !=0){
           printf("C wrong note\n");
         }
-        else if(!played){
+        else if(!current_note_played){
           playTone("C_major.wav",1);
-          played=1;
+          current_note_played=1;
         }
 
       }
@@ -367,7 +419,7 @@ void play_music(){
         if(current_pixel !=1){
           printf("D wrong note\n");
         }
-        else if(!played){
+        else if(!current_note_played){
           if(current_note_string=="LG\r"){
             playTone("D_long_major.wav",1);
           }
@@ -375,7 +427,7 @@ void play_music(){
             playTone("D_major.wav",1);
           }
 
-          played=1;
+          current_note_played=1;
         }
       }
 
@@ -383,9 +435,9 @@ void play_music(){
         if(current_pixel != 2){
           printf("E wrong note\n");
         }
-        else if(!played){
+        else if(!current_note_played){
           playTone("E_major.wav",1);
-          played=1;
+          current_note_played=1;
         }
       }
       if(F_touchValue < threshold){
@@ -393,16 +445,16 @@ void play_music(){
         if(current_pixel != 3){
           printf("F wrong note\n");
         }
-        else if(!played){
+        else if(!current_note_played){
           playTone("F_major.wav",1);
-          played=1;
+          current_note_played=1;
         }
       }
       if(G_touchValue < threshold){
         if(current_pixel != 4){
           printf("G wrong note\n");
         }
-        else if(!played){
+        else if(!current_note_played){
           if(current_note_string=="LG\r"){
             playTone("G_long_major.wav",1);
           }
@@ -410,16 +462,16 @@ void play_music(){
             playTone("G_major.wav",1);
           }
 
-          played=1;
+          current_note_played=1;
         }
       }
       if(A_touchValue < threshold){
         if(current_pixel !=5){
           printf("A wrong note\n");
         }
-        else if(!played){
+        else if(!current_note_played){
           playTone("A_major.wav",1);
-          played=1;
+          current_note_played=1;
         }
       }
 
@@ -427,9 +479,9 @@ void play_music(){
         if(current_pixel != 6){
           printf("B wrong note\n");
         }
-        else if(!played){
+        else if(!current_note_played){
           playTone("B_major.wav",1);
-          played=1;
+          current_note_played=1;
         }
       }
 
@@ -458,10 +510,10 @@ void check_touch_values(){
       bot.sendMessage(CHAT_ID, "touch sensor was touched, ouch!", "");
       printf("C wrong note\n");
     }
-    else if(!played){
+    else if(!current_note_played){
       bot.sendMessage(CHAT_ID, "touch sensor was touched, ouch!", "");
       playTone("C_major.wav",1);
-      played=1;
+      current_note_played=1;
     }
 
   }
@@ -472,7 +524,7 @@ void check_touch_values(){
 
       printf("D wrong note\n");
     }
-    else if(!played){
+    else if(!current_note_played){
       bot.sendMessage(CHAT_ID, "touch sensor was touched, ouch!", "");
 
       if(current_note_string=="LG\r"){
@@ -482,7 +534,7 @@ void check_touch_values(){
         playTone("D_major.wav",1);
       }
 
-      played=1;
+      current_note_played=1;
     }
   }
 
@@ -492,11 +544,11 @@ void check_touch_values(){
 
       printf("E wrong note\n");
     }
-    else if(!played){
+    else if(!current_note_played){
       bot.sendMessage(CHAT_ID, "touch sensor was touched, ouch!", "");
 
       playTone("E_major.wav",1);
-      played=1;
+      current_note_played=1;
     }
   }
   if(F_touchValue < threshold){
@@ -506,11 +558,11 @@ void check_touch_values(){
 
       printf("F wrong note\n");
     }
-    else if(!played){
+    else if(!current_note_played){
       bot.sendMessage(CHAT_ID, "touch sensor was touched, ouch!", "");
 
       playTone("F_major.wav",1);
-      played=1;
+      current_note_played=1;
     }
   }
   if(G_touchValue < threshold){
@@ -519,7 +571,7 @@ void check_touch_values(){
 
       printf("G wrong note\n");
     }
-    else if(!played){
+    else if(!current_note_played){
       bot.sendMessage(CHAT_ID, "touch sensor was touched, ouch!", "");
 
       if(current_note_string=="LG\r"){
@@ -529,7 +581,7 @@ void check_touch_values(){
         playTone("G_major.wav",1);
       }
 
-      played=1;
+      current_note_played=1;
     }
   }
   if(A_touchValue < threshold){
@@ -538,9 +590,9 @@ void check_touch_values(){
     if(current_pixel !=5){
       printf("A wrong note\n");
     }
-    else if(!played){
+    else if(!current_note_played){
       playTone("A_major.wav",1);
-      played=1;
+      current_note_played=1;
     }
   }
 
@@ -550,9 +602,9 @@ void check_touch_values(){
     if(current_pixel != 6){
       printf("B wrong note\n");
     }
-    else if(!played){
+    else if(!current_note_played){
       playTone("B_major.wav",1);
-      played=1;
+      current_note_played=1;
     }
   }
 
@@ -598,4 +650,58 @@ void turn_lights_green(){
     pixels.setPixelColor(i, pixels.Color(0, 100, 0));
     pixels.show();
   }
+}
+
+void read_touch_sensors(){
+  int C_touchValue = touchRead(C_TOUCH_PIN);
+  int D_touchValue = touchRead(D_TOUCH_PIN);
+  int E_touchValue = touchRead(E_TOUCH_PIN);
+  int F_touchValue = touchRead(F_TOUCH_PIN);
+  int G_touchValue = touchRead(G_TOUCH_PIN);
+  int A_touchValue = touchRead(A_TOUCH_PIN);
+  int B_touchValue = touchRead(B_TOUCH_PIN);
+  touch_sensor_val[0] = (C_touchValue>threshold)? true : false;
+  touch_sensor_val[1] = (D_touchValue>threshold)? true : false;
+  touch_sensor_val[2] = (E_touchValue>threshold)? true : false;
+  touch_sensor_val[3] = (F_touchValue>threshold)? true : false;
+  touch_sensor_val[4] = (G_touchValue>threshold)? true : false;
+  touch_sensor_val[5] = (A_touchValue>threshold)? true : false;
+  touch_sensor_val[6] = (B_touchValue>threshold)? true : false;
+  
+}
+
+void play_note(int note_number){
+  
+  if(note_number == 0){
+    playTone("C_major.wav",1);
+  }
+  else if(note_number == 1){
+    if(long_note){
+      playTone("D_long_major.wav",1);
+    }
+    else{
+      playTone("D_major.wav",1);
+    }
+  }
+  else if(note_number == 2){
+    playTone("E_major.wav",1);
+  }
+  else if(note_number == 3){
+    playTone("F_major.wav",1);
+  }
+  else if(note_number == 4){
+    if(long_note){
+      playTone("G_long_major.wav",1);
+    }
+    else{
+      playTone("G_major.wav",1);
+    }
+  }
+  else if(note_number == 5){
+    playTone("A_major.wav",1);
+  }
+  else if(note_number == 6){
+    playTone("B_major.wav",1);
+  }
+      
 }
