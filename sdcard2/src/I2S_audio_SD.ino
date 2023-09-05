@@ -88,6 +88,7 @@ File current_file;
 int current_pixel = 0;
 String note_file_name;
 int playing_music = false;
+String file_name = "";
 
 // long note
 int led_state = 0;
@@ -116,10 +117,33 @@ void handleNewMessages(int numNewMessages) {
       bot.sendMessage(chat_id, welcome, "");
     }
 
+    if (text == "/choose_song") {
+      String print_text = "Which song would you like to play?.\n";
+      String keyboardJson = "[[\"song1\",\"song2\" ,\"song3\"]]";//// the buttons
+      bot.sendMessageWithReplyKeyboard(chat_id, print_text, "", keyboardJson, true); //reply with option keyboard
+    }
+
     
-    if(text == "/play_music"){
+    if(text == "song1"){
       playing_music = true;
       bot.sendMessage(chat_id, "going to play music!", "");
+      file_name = "/music_sheets/song1.txt";
+      start = true;
+      finished = false;
+    }
+
+    if(text == "song2"){
+      playing_music = true;
+      bot.sendMessage(chat_id, "going to play music!", "");
+      file_name = "/music_sheets/song2.txt";
+      start = true;
+      finished = false;
+    }
+
+    if(text == "song3"){
+      playing_music = true;
+      bot.sendMessage(chat_id, "going to play music!", "");
+      file_name = "/music_sheets/oldMac.txt";
       start = true;
       finished = false;
     }
@@ -219,7 +243,7 @@ void play_music(){
     // String prev_note = "G\r";
     if(start){
       //open file
-      current_file= SD.open("/music_sheets/song2.txt");
+      current_file= SD.open(file_name);   
       //update start
       start = false;
       played = 0;
@@ -271,6 +295,7 @@ void play_music(){
         playing_music = false;
         current_pixel = 20;
         audio.stopSong();
+
       }
       if(current_note_string != "NULL\r" && current_note_string != "END\r")
       {
