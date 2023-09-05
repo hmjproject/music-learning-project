@@ -3,34 +3,24 @@
 #include "SPI.h"
 #include "SD.h"
 #include "FS.h"
-
 #include <Adafruit_NeoPixel.h>
-#ifdef __AVR__
-  #include <avr/power.h>
-#endif
-#ifdef ESP32
-  #include <WiFi.h>
-#else
-  #include <ESP8266WiFi.h>
-#endif
+#include <WiFi.h>
 #include <WiFiClientSecure.h>
 #include <UniversalTelegramBot.h>   // Universal Telegram Bot Library written by Brian Lough: https://github.com/witnessmenow/Universal-Arduino-Telegram-Bot
 #include <ArduinoJson.h>
 
 //Telegram
 // network credentials
-const char* ssid = "CS_conference";
-const char* password = "openday23";
+// const char* ssid = "CS_conference";
+// const char* password = "openday23";
+const char* ssid = "baba";
+const char* password = "0502214066";
+
 //Telegram BOT
 #define BOTtoken "6382002255:AAFPCttqq1v4URJGQbHBJ9fzRpcZedvYxaw"
 #define CHAT_ID "1019453346"
-#ifdef ESP8266
-  X509List cert(TELEGRAM_CERTIFICATE_ROOT);
-#endif
-
 WiFiClientSecure client;
 UniversalTelegramBot bot(BOTtoken, client);
-
 // Checks for new messages every 1 second.
 int botRequestDelay = 1000;
 unsigned long lastTimeBotRan;
@@ -54,6 +44,7 @@ unsigned long lastTimeBotRan;
 #define A_TOUCH_PIN     15
 #define B_TOUCH_PIN     4
 
+//touch threshold
 const int threshold = 35;
 
 //audio
@@ -93,6 +84,9 @@ String file_name = "";
 // long note
 int led_state = 0;
 
+//volume
+int volume = 18;
+
 void handleNewMessages(int numNewMessages) {
   Serial.println("handleNewMessages");
   Serial.println(String(numNewMessages));
@@ -113,14 +107,21 @@ void handleNewMessages(int numNewMessages) {
 
     if (text == "/start") {
       String welcome = "Welcome, " + from_name + ".\n";
-      welcome += "Use the following commands to control your outputs.\n\n";
-      bot.sendMessage(chat_id, welcome, "");
+      welcome += "what would you like to do?.\n\n";
+      String keyboardJson = "[[\"play music\" ,\"settings\" ]]";
+      bot.sendMessageWithReplyKeyboard(chat_id, welcome, "", keyboardJson, true); 
     }
 
-    if (text == "/choose_song") {
+    if (text == "settings") {
+      String print_text = "which settings would like to change?.\n";
+      String keyboardJson = "[[\"volume\"]]";
+      bot.sendMessageWithReplyKeyboard(chat_id, print_text, "", keyboardJson, true); 
+    }
+
+    if (text == "play music") {
       String print_text = "Which song would you like to play?.\n";
-      String keyboardJson = "[[\"song1\",\"song2\" ,\"song3\"]]";//// the buttons
-      bot.sendMessageWithReplyKeyboard(chat_id, print_text, "", keyboardJson, true); //reply with option keyboard
+      String keyboardJson = "[[\"song1\",\"song2\" ,\"song3\"],[ \"go back\"]]";
+      bot.sendMessageWithReplyKeyboard(chat_id, print_text, "", keyboardJson, true); 
     }
 
     
@@ -148,41 +149,71 @@ void handleNewMessages(int numNewMessages) {
       finished = false;
     }
 
+    if(text == "volume"){
+      String print_text = "would like to increase or decrease volume?.\n";
+      String keyboardJson = "[[\"increase volume\",\"decrease volume\"],[ \"go back\"]]";
+      bot.sendMessageWithReplyKeyboard(chat_id, print_text, "", keyboardJson, true); 
+    }
+
+    if(text == "increase volume"){
+      if(volume < 21){
+        volume++;
+        audio.setVolume(volume);
+        bot.sendMessage(chat_id, "Increased volume", "");
+      }
+      else{
+        bot.sendMessage(chat_id, "Can't increse the volume anymore :(", "");
+      }
+    }
+
+    if(text == "decrease volume"){
+      if(volume > 0){
+        volume--;
+        audio.setVolume(volume);
+        bot.sendMessage(chat_id, "Decreased volume", "");
+      }
+      else{
+        bot.sendMessage(chat_id, "Can't decrease the volume anymore :(", "");
+      }
+    }
+
+    if(text == "go back"){
+      String welcome = "What would you like to do?\n";
+      String keyboardJson = "[[\"play music\" ,\"settings\" ]]";
+      bot.sendMessageWithReplyKeyboard(chat_id, welcome, "", keyboardJson, true); 
+    }
+
   }
 }
 
 
 void setup() {
+
+  // ------------------- sd pin setup --------------------
   pinMode(SD_CS, OUTPUT);
   digitalWrite(SD_CS, HIGH);
+
+  //-------------------- spi setup --------------------
   SPI.begin(SPI_SCK, SPI_MISO, SPI_MOSI);
   SPI.setFrequency(1000000);
+
+  //------------------- serial --------------------
   Serial.begin(115200);
 
-  #ifdef ESP8266
-    configTime(0, 0, "pool.ntp.org");      // get UTC time via NTP
-    client.setTrustAnchors(&cert); // Add root certificate for api.telegram.org
-  #endif
 
   SD.begin(SD_CS);
+
+  //--------------- audio ------------------------
   audio.setPinout(I2S_BCLK, I2S_LRC, I2S_DOUT);
-  audio.setVolume(21); // range 0...21 - This is not amplifier gain, but controlling the level of output amplitude. 
+  audio.setVolume(volume); // range 0...21 - This is not amplifier gain, but controlling the level of output amplitude. 
+  // audio.connecttoFS(SD, "123_u8.wav"); // a file with the proper name must be placed in root folder of SD card (formatted FAT32, file name max 8 chars no spaces)
+  // audio.stopSong();
 
-  audio.connecttoFS(SD, "123_u8.wav"); // a file with the proper name must be placed in root folder of SD card (formatted FAT32, file name max 8 chars no spaces)
-  
-  audio.stopSong();
-
-  #if defined(__AVR_ATtiny85__) && (F_CPU == 16000000)
-  clock_prescale_set(clock_div_1);
-  #endif
-  // END of Trinket-specific code.
-
-  // Connect to Wi-Fi
+  //----------------- Connect to Wi-Fi ----------------------
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
-  #ifdef ESP32
-    client.setCACert(TELEGRAM_CERTIFICATE_ROOT); // Add root certificate for api.telegram.org
-  #endif
+  client.setCACert(TELEGRAM_CERTIFICATE_ROOT); // Add root certificate for api.telegram.org
+
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
     Serial.println("Connecting to WiFi..");
@@ -190,11 +221,12 @@ void setup() {
   // Print ESP32 Local IP Address
   Serial.println(WiFi.localIP());
 
-  pixels.begin(); // INITIALIZE NeoPixel strip object (REQUIRED)
+  //----------------------- initialize neo-pexils -------------------------
+  pixels.begin(); 
   pixels.clear();
-  // delay(1000);
 
 }
+
 
 void loop()
 {
@@ -242,8 +274,12 @@ void play_music(){
     unsigned long currentMillis = millis();
     // String prev_note = "G\r";
     if(start){
+      printf("at start, opening file\n");
       //open file
-      current_file= SD.open(file_name);   
+      current_file= SD.open(file_name);  
+      if(!current_file){
+        Serial.print("couldn't open file!");
+      } 
       //update start
       start = false;
       played = 0;
@@ -295,6 +331,7 @@ void play_music(){
         playing_music = false;
         current_pixel = 20;
         audio.stopSong();
+        current_file.close();
 
       }
       if(current_note_string != "NULL\r" && current_note_string != "END\r")
@@ -398,12 +435,12 @@ void play_music(){
 
     }
 
-    if (Serial.available()) { // if any string is sent via serial port
-      audio.stopSong();
-      Serial.println("audio stopped");
-      log_i("free heap=%i", ESP.getFreeHeap()); //available RAM
-      Serial.flush();
-    }
+    // if (Serial.available()) { // if any string is sent via serial port
+    //   audio.stopSong();
+    //   Serial.println("audio stopped");
+    //   log_i("free heap=%i", ESP.getFreeHeap()); //available RAM
+    //   Serial.flush();
+    // }
 }
 
 
