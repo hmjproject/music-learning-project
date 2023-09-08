@@ -94,9 +94,9 @@ int volume = 18;
 //statistics
 int wrong_notes = 0;
 int delayed_notes = 0;
-int last_wrong_played_note = -1;
+int last_played_wrong_note = -1;
 
-
+String current_chat_id = "";
 //states declaration 
 enum bot_states{
   START,
@@ -124,10 +124,11 @@ void handleNewMessages(int numNewMessages) {
   for (int i=0; i<numNewMessages; i++) {
     // Chat id of the requester
     String chat_id = String(bot.messages[i].chat_id);
-    if (chat_id != CHAT_ID){
-      bot.sendMessage(chat_id, "Unauthorized user", "");
-      continue;
-    }
+    current_chat_id = chat_id;
+    // if (chat_id != CHAT_ID){
+    //   bot.sendMessage(chat_id, "Unauthorized user", "");
+    //   continue;
+    // }
     
     // Print the received message
     String text = bot.messages[i].text;
@@ -170,6 +171,8 @@ void handleNewMessages(int numNewMessages) {
     
     else if(b_state == CHOOSE_MUSIC)
     {
+      wrong_notes = 0;
+      delayed_notes = 0;
       if(text == "song1"){
         m_state = PLAYING_SONG;
         bot.sendMessage(chat_id, "going to play music!", "");
@@ -262,7 +265,14 @@ void handleNewMessages(int numNewMessages) {
 
     else if(b_state == STATS_MENU){
       if(text == "get statistics"){
-        bot.sendMessage(chat_id, "your stats:", "");
+        double st1=(wrong_notes/12)*100;
+        printf("st1 is: %f\n",st1);
+
+        double st2=(delayed_notes/12)*100;
+        printf("st2 is: %f\n",st2);
+
+        String message = "your stats:\nwrong notes: " + String(st1,3) +"\nDelayed notes: " + String(st2,3);
+        bot.sendMessage(chat_id, message, "");
         bot_print_menu(chat_id);
         b_state = INSTRUCTION;
       }
@@ -330,7 +340,6 @@ void setup() {
 void loop()
 {
   audio.loop();
-  
 
   if(m_state == WAITING_FOR_COMMANDS){
     for(int i = 0; i < 8; i++){
@@ -340,7 +349,7 @@ void loop()
     
     if (millis() > lastTimeBotRan + botRequestDelay)  {
       int numNewMessages = bot.getUpdates(bot.last_message_received + 1);
-      printf("num of new messages is %d\n",numNewMessages);
+      // printf("num of new messages is %d\n",numNewMessages);
       if(numNewMessages) {
         Serial.println("got response");
         handleNewMessages(numNewMessages);
@@ -354,11 +363,10 @@ void loop()
     play_music();
 
     if(finished){
-      audio.stopSong();
-      bot.sendMessage(CHAT_ID, "Done playing!", "");
+      bot.sendMessage(current_chat_id, "Done playing!", "");
       String welcome = "What would you like to do?\n";
       String keyboardJson = "[[\"get statistics\" ,\"go back to menu\" ]]";
-      bot.sendMessageWithReplyKeyboard(CHAT_ID, welcome, "", keyboardJson, true); 
+      bot.sendMessageWithReplyKeyboard(current_chat_id, welcome, "", keyboardJson, true); 
       b_state = STATS_MENU;
     }
 
@@ -391,13 +399,14 @@ void play_music(){
       //update start
       start = false;
       current_note_played = 0;
-      wrong_notes = 0;
-      delayed_notes = 0;
+      
       // note_played_in_epsilon_time = true;
     }
 
     if(currentMillis - note_read_millis > 1200){
-      
+      if(!current_note_played && last_played_wrong_note == -1){
+        wrong_notes++;
+      }
       //turn off previous pexil
       turn_off_lights();
 
@@ -444,6 +453,9 @@ void play_music(){
         current_pixel = 20;
         audio.stopSong();
         current_file.close();
+        printf("wrong note number ----------------> %d\n",wrong_notes);
+        printf("delayed note number ----------------> %d\n",delayed_notes);
+
       }
       if(current_note_string != "NULL\r" && current_note_string != "END\r")
       {
@@ -457,7 +469,7 @@ void play_music(){
       else{
         current_note_played = 0;
       }
-      last_wrong_played_note = -1;
+      last_played_wrong_note = -1;
 
     }
 
@@ -501,7 +513,7 @@ void play_music(){
             continue;
           }
           if(touch_sensor_val[i]){
-            if(last_wrong_played_note == i){
+            if(last_played_wrong_note == i){
               continue;
             }
             printf("got wrong note, %d\n", i);
@@ -511,7 +523,7 @@ void play_music(){
 
             // update wrong notes number
             wrong_notes++;
-            last_wrong_played_note = i;
+            last_played_wrong_note = i;
           }
         }
       }
@@ -529,7 +541,7 @@ void play_music(){
           continue;
         }
         if(touch_sensor_val[i]){
-          if(last_wrong_played_note == i){
+          if(last_played_wrong_note == i){
             continue;
           }
           printf("got wrong note, %d\n", i);
@@ -539,7 +551,7 @@ void play_music(){
 
           // update wrong notes number
           wrong_notes++;
-          last_wrong_played_note = i;
+          last_played_wrong_note = i;
         }
       }
     }
