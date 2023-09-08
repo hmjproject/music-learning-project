@@ -11,10 +11,10 @@
 
 //Telegram
 // network credentials
-// const char* ssid = "CS_conference";
-// const char* password = "openday23";
-const char* ssid = "baba";
-const char* password = "0502214066";
+const char* ssid = "CS_conference";
+const char* password = "openday23";
+// const char* ssid = "baba";
+// const char* password = "0502214066";
 
 //Telegram BOT
 #define BOTtoken "6382002255:AAFPCttqq1v4URJGQbHBJ9fzRpcZedvYxaw"
@@ -48,7 +48,7 @@ unsigned long lastTimeBotRan;
 const int threshold = 35;
 
 //touch sensors array
-bool touch_sensor_val[7] = {0,0,0,0,0,0,0};
+bool touch_sensor_val[7] = {false,false,false,false,false,false,false};
 
 //audio
 Audio audio;
@@ -362,6 +362,7 @@ void play_music(){
       read_touch_sensors();
       // is the right note pressed?
       if(touch_sensor_val[current_note_played]){
+        printf("current note was played!\n");
         // play note
         play_note(current_pixel);
         // update that note has been read
@@ -660,13 +661,13 @@ void read_touch_sensors(){
   int G_touchValue = touchRead(G_TOUCH_PIN);
   int A_touchValue = touchRead(A_TOUCH_PIN);
   int B_touchValue = touchRead(B_TOUCH_PIN);
-  touch_sensor_val[0] = (C_touchValue>threshold)? true : false;
-  touch_sensor_val[1] = (D_touchValue>threshold)? true : false;
-  touch_sensor_val[2] = (E_touchValue>threshold)? true : false;
-  touch_sensor_val[3] = (F_touchValue>threshold)? true : false;
-  touch_sensor_val[4] = (G_touchValue>threshold)? true : false;
-  touch_sensor_val[5] = (A_touchValue>threshold)? true : false;
-  touch_sensor_val[6] = (B_touchValue>threshold)? true : false;
+  touch_sensor_val[0] = (C_touchValue<threshold)? true : false;
+  touch_sensor_val[1] = (D_touchValue<threshold)? true : false;
+  touch_sensor_val[2] = (E_touchValue<threshold)? true : false;
+  touch_sensor_val[3] = (F_touchValue<threshold)? true : false;
+  touch_sensor_val[4] = (G_touchValue<threshold)? true : false;
+  touch_sensor_val[5] = (A_touchValue<threshold)? true : false;
+  touch_sensor_val[6] = (B_touchValue<threshold)? true : false;
   
 }
 
