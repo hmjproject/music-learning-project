@@ -291,6 +291,8 @@ void play_music(){
       //update start
       start = false;
       current_note_played = 0;
+      wrong_notes = 0;
+      delayed_notes = 0;
       // note_played_in_epsilon_time = true;
     }
 
@@ -341,6 +343,8 @@ void play_music(){
         current_pixel = 20;
         audio.stopSong();
         current_file.close();
+        printf("number of delayed notes: %d\n", delayed_notes);
+        printf("number of wrong notes: %d\n", wrong_notes);
 
       }
       if(current_note_string != "NULL\r" && current_note_string != "END\r")
@@ -361,7 +365,7 @@ void play_music(){
       touch_sensor_millis = currentMillis;
       read_touch_sensors();
       // is the right note pressed?
-      if(touch_sensor_val[current_note_played]){
+      if(touch_sensor_val[current_pixel]){
         printf("current note was played!\n");
         // play note
         play_note(current_pixel);
@@ -375,7 +379,7 @@ void play_music(){
       touch_sensor_millis = currentMillis;
       read_touch_sensors();
       // is the right note pressed?
-      if(touch_sensor_val[current_note_played]){
+      if(touch_sensor_val[current_pixel]){
         // play note
         play_note(current_pixel);
         // update that note has been played
@@ -384,7 +388,11 @@ void play_music(){
       }
       else{
         for(int i = 0; i < 7; i++){
+          if(i==current_pixel){
+            continue;
+          }
           if(touch_sensor_val[i]){
+            printf("got wrong note, %d\n", i);
             // play note that was pressed
             play_note(i);
             // update wrong notes number
