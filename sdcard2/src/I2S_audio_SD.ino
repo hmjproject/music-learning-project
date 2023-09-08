@@ -94,6 +94,25 @@ int volume = 18;
 //statistics
 int wrong_notes = 0;
 int delayed_notes = 0;
+int last_wrong_played_note = -1;
+
+
+//states declaration 
+enum bot_states{
+  START,
+  CHOOSE_MUSIC,
+  VOLUME,
+  DONE_PLAYING_SONG
+};
+
+enum machine_state{
+  PLAYING_SONG,
+  WAITING_FOR_COMMANDS
+};
+
+//state values
+machine_state m_state = WAITING_FOR_COMMANDS;
+bot_states b_state = START;
 
 void handleNewMessages(int numNewMessages) {
   Serial.println("handleNewMessages");
@@ -119,51 +138,48 @@ void handleNewMessages(int numNewMessages) {
       String keyboardJson = "[[\"play music\" ,\"settings\" ]]";
       bot.sendMessageWithReplyKeyboard(chat_id, welcome, "", keyboardJson, true); 
     }
-
-    if (text == "settings") {
+    else if (text == "settings") {
       String print_text = "which settings would like to change?.\n";
       String keyboardJson = "[[\"volume\"]]";
       bot.sendMessageWithReplyKeyboard(chat_id, print_text, "", keyboardJson, true); 
     }
-
-    if (text == "play music") {
+    else if (text == "play music") {
       String print_text = "Which song would you like to play?.\n";
       String keyboardJson = "[[\"song1\",\"song2\" ,\"song3\"],[ \"go back\"]]";
       bot.sendMessageWithReplyKeyboard(chat_id, print_text, "", keyboardJson, true); 
     }
-
-    
-    if(text == "song1"){
+    else if(text == "song1"){
       playing_music = true;
+      m_state = PLAYING_SONG;
       bot.sendMessage(chat_id, "going to play music!", "");
       file_name = "/music_sheets/song1.txt";
       start = true;
       finished = false;
     }
-
-    if(text == "song2"){
+    else if(text == "song2"){
       playing_music = true;
+      m_state = PLAYING_SONG;
       bot.sendMessage(chat_id, "going to play music!", "");
       file_name = "/music_sheets/song2.txt";
       start = true;
       finished = false;
     }
 
-    if(text == "song3"){
-      playing_music = true;
+    else if(text == "song3"){
+      m_state = PLAYING_SONG;
       bot.sendMessage(chat_id, "going to play music!", "");
       file_name = "/music_sheets/oldMac.txt";
       start = true;
       finished = false;
     }
 
-    if(text == "volume"){
+    else if(text == "volume"){
       String print_text = "would like to increase or decrease volume?.\n";
       String keyboardJson = "[[\"increase volume\",\"decrease volume\"],[ \"go back\"]]";
       bot.sendMessageWithReplyKeyboard(chat_id, print_text, "", keyboardJson, true); 
     }
 
-    if(text == "increase volume"){
+    else if(text == "increase volume"){
       if(volume < 21){
         volume++;
         audio.setVolume(volume);
@@ -174,7 +190,7 @@ void handleNewMessages(int numNewMessages) {
       }
     }
 
-    if(text == "decrease volume"){
+    else if(text == "decrease volume"){
       if(volume > 0){
         volume--;
         audio.setVolume(volume);
@@ -185,11 +201,22 @@ void handleNewMessages(int numNewMessages) {
       }
     }
 
-    if(text == "go back"){
+    else if(text == "go back"){
       String welcome = "What would you like to do?\n";
       String keyboardJson = "[[\"play music\" ,\"settings\" ]]";
       bot.sendMessageWithReplyKeyboard(chat_id, welcome, "", keyboardJson, true); 
     }
+
+    else{
+      bot.sendMessage(chat_id, "I don't understand please enter a valid response :)", "");
+    }
+
+    // if(b_state == DONE_PLAYING_SONG){
+    //   // ask if he wants stats
+    //   // if yes ask if for the last song or general
+    //   // if no print the menue
+
+    // }
 
   }
 }
@@ -241,7 +268,7 @@ void loop()
   audio.loop();
   
 
-  if(!playing_music){
+  if(m_state == WAITING_FOR_COMMANDS){
     for(int i = 0; i < 8; i++){
       pixels.setPixelColor(i, pixels.Color(0, 0, 0));
       pixels.show();
@@ -258,7 +285,8 @@ void loop()
       lastTimeBotRan = millis();
     }
   }
-  if(playing_music){
+
+  if(m_state == PLAYING_SONG){
     play_music();
 
     if(finished){
@@ -266,6 +294,9 @@ void loop()
     }
 
   }
+  // if(m_state == DONE_PLAYING_SONG){
+  //   //ask if he wants to 
+  // }
   
 }
 
@@ -335,16 +366,18 @@ void play_music(){
       else if(current_note_string == "NULL\r"){
         turn_off_lights();
         current_pixel = 20;
+        
       }
       else if(current_note_string == "END\r"){
         turn_off_lights();
         finished = true;
-        playing_music = false;
+        m_state = WAITING_FOR_COMMANDS;
         current_pixel = 20;
         audio.stopSong();
         current_file.close();
         printf("number of delayed notes: %d\n", delayed_notes);
         printf("number of wrong notes: %d\n", wrong_notes);
+
 
       }
       if(current_note_string != "NULL\r" && current_note_string != "END\r")
@@ -353,15 +386,21 @@ void play_music(){
         pixels.setPixelColor(current_pixel, pixels.Color(0, 200, 150));
         pixels.show();
       }
-      current_note_played = 0;
+      if(current_pixel == 20){
+        current_note_played = 1;
+      }
+      else{
+        current_note_played = 0;
+      }
+      last_wrong_played_note = -1;
 
     }
 
-    // if the right sensor is touched within 300ms, the note is considered to be played successfully
-    // if the right sensor was touched after 300ms from reading the note, it is considered to be a missed/delayed note
-    //if a wrong sensor was touched after 300ms from reading the note, it is considered a fail
+    // if the right sensor is touched within 500ms, the note is considered to be played successfully
+    // if the right sensor was touched after 500ms from reading the note, it is considered to be a missed/delayed note
+    //if a wrong sensor was touched after 500ms from reading the note, it is considered a fail
 
-    if (!current_note_played && (currentMillis - touch_sensor_millis_1 > 30) && currentMillis - note_read_millis < 300 ) {
+    if (!current_note_played && (currentMillis - touch_sensor_millis_1 > 20) && currentMillis - note_read_millis < 500 ) {
       touch_sensor_millis = currentMillis;
       read_touch_sensors();
       // is the right note pressed?
@@ -369,22 +408,27 @@ void play_music(){
         printf("current note was played!\n");
         // play note
         play_note(current_pixel);
+        printf("if 11111111111111111111111111111111\n");
+
         // update that note has been read
         current_note_played = 1;
       }
     }
 
-    // after 300ms, note hasn't been played
-    if (!current_note_played && (currentMillis - touch_sensor_millis_1 > 30) && currentMillis - note_read_millis > 300 ) {
+    // after 500ms, note hasn't been played
+    if (!current_note_played && (currentMillis - touch_sensor_millis_1 > 20) && currentMillis - note_read_millis > 500 ) {
       touch_sensor_millis = currentMillis;
       read_touch_sensors();
       // is the right note pressed?
       if(touch_sensor_val[current_pixel]){
         // play note
         play_note(current_pixel);
+        printf("if 22222222222222222222222222\n");
+
         // update that note has been played
         current_note_played = 1;
         delayed_notes++;
+        printf("delayed time: %d\n",currentMillis - note_read_millis);
       }
       else{
         for(int i = 0; i < 7; i++){
@@ -392,11 +436,17 @@ void play_music(){
             continue;
           }
           if(touch_sensor_val[i]){
+            if(last_wrong_played_note == i){
+              continue;
+            }
             printf("got wrong note, %d\n", i);
             // play note that was pressed
             play_note(i);
+            printf("if 22222222222222222222222222\n");
+
             // update wrong notes number
             wrong_notes++;
+            last_wrong_played_note = i;
           }
         }
       }
@@ -406,102 +456,28 @@ void play_music(){
     //once the note has been played, make sure no wrong note is played every 30ms
     if (current_note_played && currentMillis - touch_sensor_millis > 30 ) {
       touch_sensor_millis = currentMillis;
-      int C_touchValue = touchRead(C_TOUCH_PIN);
-      int D_touchValue = touchRead(D_TOUCH_PIN);
-      int E_touchValue = touchRead(E_TOUCH_PIN);
-      int F_touchValue = touchRead(F_TOUCH_PIN);
-      int G_touchValue = touchRead(G_TOUCH_PIN);
-      int A_touchValue = touchRead(A_TOUCH_PIN);
-      int B_touchValue = touchRead(B_TOUCH_PIN);
-      if(C_touchValue < threshold){
-        if(current_pixel !=0){
-          printf("C wrong note\n");
+      read_touch_sensors();
+      // is the right note pressed?
+      
+      for(int i = 0; i < 7; i++){
+        if(i == current_pixel){
+          continue;
         }
-        else if(!current_note_played){
-          playTone("C_major.wav",1);
-          current_note_played=1;
-        }
-
-      }
-
-      if(D_touchValue < threshold){
-        if(current_pixel !=1){
-          printf("D wrong note\n");
-        }
-        else if(!current_note_played){
-          if(current_note_string=="LG\r"){
-            playTone("D_long_major.wav",1);
+        if(touch_sensor_val[i]){
+          if(last_wrong_played_note == i){
+            continue;
           }
-          else{
-            playTone("D_major.wav",1);
-          }
+          printf("got wrong note, %d\n", i);
+          // play note that was pressed
+          play_note(i);
+          printf("if 3333333333333333333333333\n");
 
-          current_note_played=1;
+          // update wrong notes number
+          wrong_notes++;
+          last_wrong_played_note = i;
         }
       }
-
-      if(E_touchValue < threshold){
-        if(current_pixel != 2){
-          printf("E wrong note\n");
-        }
-        else if(!current_note_played){
-          playTone("E_major.wav",1);
-          current_note_played=1;
-        }
-      }
-      if(F_touchValue < threshold){
-
-        if(current_pixel != 3){
-          printf("F wrong note\n");
-        }
-        else if(!current_note_played){
-          playTone("F_major.wav",1);
-          current_note_played=1;
-        }
-      }
-      if(G_touchValue < threshold){
-        if(current_pixel != 4){
-          printf("G wrong note\n");
-        }
-        else if(!current_note_played){
-          if(current_note_string=="LG\r"){
-            playTone("G_long_major.wav",1);
-          }
-          else{
-            playTone("G_major.wav",1);
-          }
-
-          current_note_played=1;
-        }
-      }
-      if(A_touchValue < threshold){
-        if(current_pixel !=5){
-          printf("A wrong note\n");
-        }
-        else if(!current_note_played){
-          playTone("A_major.wav",1);
-          current_note_played=1;
-        }
-      }
-
-      if(B_touchValue < threshold){
-        if(current_pixel != 6){
-          printf("B wrong note\n");
-        }
-        else if(!current_note_played){
-          playTone("B_major.wav",1);
-          current_note_played=1;
-        }
-      }
-
     }
-
-    // if (Serial.available()) { // if any string is sent via serial port
-    //   audio.stopSong();
-    //   Serial.println("audio stopped");
-    //   log_i("free heap=%i", ESP.getFreeHeap()); //available RAM
-    //   Serial.flush();
-    // }
 }
 
 
