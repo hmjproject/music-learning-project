@@ -110,7 +110,8 @@ enum bot_states{
 
 enum machine_state{
   PLAYING_SONG,
-  WAITING_FOR_COMMANDS
+  WAITING_FOR_COMMANDS,
+  PLAY_FREELY
 };
 
 //state values
@@ -160,7 +161,7 @@ void handleNewMessages(int numNewMessages) {
       }
       else if (text == "play music") {
         String print_text = "Which song would you like to play?.\n";
-        String keyboardJson = "[[\"song1\",\"song2\" ,\"song3\"],[ \"go back\"]]";
+        String keyboardJson = "[[\"song1\",\"song2\" ,\"song3\",\"play freely\"],[ \"go back\"]]";
         bot.sendMessageWithReplyKeyboard(chat_id, print_text, "", keyboardJson, true); 
         b_state = CHOOSE_MUSIC;
       }
@@ -200,6 +201,11 @@ void handleNewMessages(int numNewMessages) {
       else if(text == "go back"){
         bot_print_menu(chat_id);
         b_state = INSTRUCTION;
+      }
+      else if(text == "play freely"){
+        b_state = CHOOSE_MUSIC;
+        m_state = PLAY_FREELY;
+
       }
       else{
         bot.sendMessage(chat_id, "Please choose a valid option", "");
@@ -370,6 +376,21 @@ void loop()
       b_state = STATS_MENU;
     }
 
+  }
+  if(m_state == PLAY_FREELY){
+    unsigned long currentMillis = millis();
+    if ( (currentMillis - touch_sensor_millis_1 > 20) ) {
+      touch_sensor_millis = currentMillis;
+      read_touch_sensors();
+      // is the right note pressed?
+      for(int i = 0; i < 7; i++){
+        if(touch_sensor_val[i]){
+          
+          play_note(i);
+
+        }
+      }
+    }
   }
   // if(m_state == DONE_PLAYING_SONG){
   //   //ask if he wants to 
