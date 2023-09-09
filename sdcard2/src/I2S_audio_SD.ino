@@ -20,10 +20,12 @@ const char* password = "openday23";
 #define BOTtoken "6382002255:AAFPCttqq1v4URJGQbHBJ9fzRpcZedvYxaw"
 #define CHAT_ID "1019453346"
 WiFiClientSecure client;
+WiFiClientSecure secured_client;
 UniversalTelegramBot bot(BOTtoken, client);
 // Checks for new messages every 1 second.
 int botRequestDelay = 1000;
 unsigned long lastTimeBotRan;
+
 
 
 // Digital I/O used
@@ -52,10 +54,12 @@ bool touch_sensor_val[7] = {false,false,false,false,false,false,false};
 
 //audio
 Audio audio;
-
 //millis
 unsigned long touch_sensor_millis = 0, touch_sensor_millis_1 = 0, note_read_millis = 0;
 bool pressed = true;
+
+//URL
+String test_photo_url = "https://i.imgur.com/WL7kmln.jpg";
 
 
 //neopixel
@@ -80,20 +84,19 @@ bool note_played_in_epsilon_time = false;
 int start = true;
 int finished = false;
 File current_file;
+File imageFile;
 int current_pixel = 0;
 String note_file_name;
 int playing_music = false;
 String file_name = "";
-
+String photo_name = "";
 // long note
 bool long_note = false;
-
 //volume
 int volume = 18;
-
 //statistics
-int wrong_notes = 0;
-int delayed_notes = 0;
+double wrong_notes = 0;
+double delayed_notes = 0;
 int last_played_wrong_note = -1;
 
 String current_chat_id = "";
@@ -113,6 +116,19 @@ enum machine_state{
   WAITING_FOR_COMMANDS,
   PLAY_FREELY
 };
+
+bool isMoreDataAvailable();
+byte getNextByte();
+
+bool isMoreDataAvailable()
+{
+  return imageFile.available();
+}
+
+byte getNextByte()
+{
+  return imageFile.read();
+}
 
 //state values
 machine_state m_state = WAITING_FOR_COMMANDS;
@@ -139,29 +155,29 @@ void handleNewMessages(int numNewMessages) {
 
     if(b_state == START){
       if (text == "/start") {
-        String welcome = "Welcome, " + from_name + ".\n";
-        welcome += "what would you like to do?.\n\n";
-        String keyboardJson = "[[\"play music\" ,\"settings\" ]]";
+        String welcome = "Welcome, " + from_name + ".🙋‍♀️\n";
+        welcome += "what would you like to do❓\n\n";
+        String keyboardJson = "[[\"play music 🎼\" ,\"settings ⚙\" ]]";
         bot.sendMessageWithReplyKeyboard(chat_id, welcome, "", keyboardJson, true); 
         b_state = INSTRUCTION;
       }
       else{
-        bot.sendMessage(chat_id, "Please type /start to start", "");
+        bot.sendMessage(chat_id, "Please type /start to start 🎬", "");
         
       }
     }
     
     else if(b_state == INSTRUCTION)
     {
-      if (text == "settings") {
-        String print_text = "which settings would like to change?.\n";
-        String keyboardJson = "[[\"volume\"]]";
+      if (text == "settings ⚙") {
+        String print_text = "which settings would like to change❓\n";
+        String keyboardJson = "[[\"volume 🔈\"]]";
         bot.sendMessageWithReplyKeyboard(chat_id, print_text, "", keyboardJson, true); 
         b_state = SETTINGS;
       }
-      else if (text == "play music") {
-        String print_text = "Which song would you like to play?.\n";
-        String keyboardJson = "[[\"song1\",\"song2\" ,\"song3\",\"play freely\"],[ \"go back\"]]";
+      else if (text == "play music 🎼") {
+        String print_text = "Which song would you like to play❓\n";
+        String keyboardJson = "[[\"song1\",\"song2\" ,\"song3\",\"play freely\"],[ \"go back 🔙\"]]";
         bot.sendMessageWithReplyKeyboard(chat_id, print_text, "", keyboardJson, true); 
         b_state = CHOOSE_MUSIC;
       }
@@ -176,7 +192,7 @@ void handleNewMessages(int numNewMessages) {
       delayed_notes = 0;
       if(text == "song1"){
         m_state = PLAYING_SONG;
-        bot.sendMessage(chat_id, "going to play music!", "");
+        bot.sendMessage(chat_id, "going to play music💃🏻", "");
         file_name = "/music_sheets/song1.txt";
         start = true;
         finished = false;
@@ -184,7 +200,7 @@ void handleNewMessages(int numNewMessages) {
       }
       else if(text == "song2"){
         m_state = PLAYING_SONG;
-        bot.sendMessage(chat_id, "going to play music!", "");
+        bot.sendMessage(chat_id, "going to play music💃🏻", "");
         file_name = "/music_sheets/song2.txt";
         start = true;
         finished = false;
@@ -192,13 +208,13 @@ void handleNewMessages(int numNewMessages) {
       }
       else if(text == "song3"){
         m_state = PLAYING_SONG;
-        bot.sendMessage(chat_id, "going to play music!", "");
+        bot.sendMessage(chat_id, "going to play music💃🏻", "");
         file_name = "/music_sheets/oldMac.txt";
         start = true;
         finished = false;
         b_state = STATS;
       }
-      else if(text == "go back"){
+      else if(text == "go back 🔙"){
         bot_print_menu(chat_id);
         b_state = INSTRUCTION;
       }
@@ -215,9 +231,9 @@ void handleNewMessages(int numNewMessages) {
 
     else if(b_state == SETTINGS)
     {
-      if(text == "volume"){
-        String print_text = "would like to increase or decrease volume?.\n";
-        String keyboardJson = "[[\"increase volume\",\"decrease volume\"],[ \"go back\"]]";
+      if(text == "volume 🔈"){
+        String print_text = "would like to increase or decrease volume❓\n";
+        String keyboardJson = "[[\"increase volume🔊\",\"decrease volume🔉\"],[ \"go back 🔙\"]]";
         bot.sendMessageWithReplyKeyboard(chat_id, print_text, "", keyboardJson, true); 
         b_state = VOLUME;
       }
@@ -227,33 +243,33 @@ void handleNewMessages(int numNewMessages) {
     }
 
     else if(b_state == VOLUME){
-      if(text == "increase volume"){
+      if(text == "increase volume🔊"){
         if(volume < 21){
           volume++;
           audio.setVolume(volume);
           bot.sendMessage(chat_id, "Increased volume", "");
         }
         else{
-          bot.sendMessage(chat_id, "Can't increse the volume anymore :(", "");
+          bot.sendMessage(chat_id, "Can't increse the volume anymore 🤷‍♀️", "");
         }
         b_state = VOLUME;
       }
 
-      if(text == "decrease volume"){
+      else if(text == "decrease volume🔉"){
         if(volume > 0){
           volume--;
           audio.setVolume(volume);
           bot.sendMessage(chat_id, "Decreased volume", "");
         }
         else{
-          bot.sendMessage(chat_id, "Can't decrease the volume anymore :(", "");
+          bot.sendMessage(chat_id, "Can't decrease the volume anymore 🤷‍♀️", "");
         }
         b_state = VOLUME;
 
       }
-      else if(text == "go back"){
-        String welcome = "What would you like to do?\n";
-        String keyboardJson = "[[\"play music\" ,\"settings\" ]]";
+      else if(text == "go back 🔙"){
+        String welcome = "What would you like to do❓\n";
+        String keyboardJson = "[[\"play music 🎼\" ,\"settings ⚙\" ]]";
         bot.sendMessageWithReplyKeyboard(chat_id, welcome, "", keyboardJson, true); 
         b_state = INSTRUCTION;
       }
@@ -270,19 +286,19 @@ void handleNewMessages(int numNewMessages) {
     // }
 
     else if(b_state == STATS_MENU){
-      if(text == "get statistics"){
-        double st1=(wrong_notes/12)*100;
+      if(text == "get statistics📉")
+      {
+       double st1=(wrong_notes/12)*100;
         printf("st1 is: %f\n",st1);
-
         double st2=(delayed_notes/12)*100;
         printf("st2 is: %f\n",st2);
-
-        String message = "your stats:\nwrong notes: " + String(st1,3) +"\nDelayed notes: " + String(st2,3);
+        String message = "your stats:\nwrong notes: " + String(st1,3) +" ❌"+"\nDelayed notes: " + String(st2,3) + " ⏰";
         bot.sendMessage(chat_id, message, "");
-        bot_print_menu(chat_id);
+        bot.sendPhoto(chat_id, test_photo_url, "your scoooooore :)))))))");
+         bot_print_menu(chat_id);
         b_state = INSTRUCTION;
       }
-      else if(text == "go back to menu"){
+      else if(text == "go back to menu🔙"){
         bot_print_menu(chat_id);
         b_state = INSTRUCTION;
       }
@@ -297,8 +313,8 @@ void handleNewMessages(int numNewMessages) {
 }
 
 void bot_print_menu(String chat_id){
-  String welcome = "What would you like to do?\n";
-  String keyboardJson = "[[\"play music\" ,\"settings\" ]]";
+  String welcome = "What would you like to do❓\n";
+  String keyboardJson = "[[\"play music 🎼\" ,\"settings ⚙\" ]]";
   bot.sendMessageWithReplyKeyboard(chat_id, welcome, "", keyboardJson, true);
 }
 
@@ -314,8 +330,6 @@ void setup() {
 
   //------------------- serial --------------------
   Serial.begin(115200);
-
-
   SD.begin(SD_CS);
 
   //--------------- audio ------------------------
@@ -367,11 +381,10 @@ void loop()
 
   if(m_state == PLAYING_SONG){
     play_music();
-
     if(finished){
-      bot.sendMessage(current_chat_id, "Done playing!", "");
-      String welcome = "What would you like to do?\n";
-      String keyboardJson = "[[\"get statistics\" ,\"go back to menu\" ]]";
+      bot.sendMessage(current_chat_id, "Done playing! ✅", "");
+      String welcome = "What would you like to do❓\n";
+      String keyboardJson = "[[\"get statistics📉\" ,\"go back to menu🔙\" ]]";
       bot.sendMessageWithReplyKeyboard(current_chat_id, welcome, "", keyboardJson, true); 
       b_state = STATS_MENU;
     }
@@ -474,8 +487,8 @@ void play_music(){
         current_pixel = 20;
         audio.stopSong();
         current_file.close();
-        printf("wrong note number ----------------> %d\n",wrong_notes);
-        printf("delayed note number ----------------> %d\n",delayed_notes);
+        printf("wrong note number ----------------> %f\n",wrong_notes);
+        printf("delayed note number ----------------> %f\n",delayed_notes);
 
       }
       if(current_note_string != "NULL\r" && current_note_string != "END\r")
@@ -790,3 +803,6 @@ void play_note(int note_number){
 
       
 }
+
+
+
