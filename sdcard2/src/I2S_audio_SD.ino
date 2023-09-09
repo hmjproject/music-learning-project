@@ -161,7 +161,7 @@ void handleNewMessages(int numNewMessages) {
       }
       else if (text == "play music") {
         String print_text = "Which song would you like to play?.\n";
-        String keyboardJson = "[[\"song1\",\"song2\" ,\"song3\",\"play freely\"],[ \"go back\"]]";
+        String keyboardJson = "[[\"song1\",\"song2\" ,\"song3\",\"my song\",\"play freely\"],[ \"go back\"]]";
         bot.sendMessageWithReplyKeyboard(chat_id, print_text, "", keyboardJson, true); 
         b_state = CHOOSE_MUSIC;
       }
@@ -197,6 +197,59 @@ void handleNewMessages(int numNewMessages) {
         start = true;
         finished = false;
         b_state = STATS;
+      }
+      else if (text == "my song"){
+        bot.sendMessage(chat_id, "enter a string of 12 characters!", "");
+        String my_notes[13];
+        // Check for new messages
+        int num_of_messages = bot.getUpdates(bot.last_message_received + 1);
+        while(!num_of_messages){
+          num_of_messages = bot.getUpdates(bot.last_message_received + 1);
+        }
+        printf("before if\n ");
+        if(num_of_messages == 1){
+          String song_text = bot.messages[0].text;
+          printf("get the massege :%s\n", song_text);
+          if(song_text.length() > 1 && song_text.length() < 25 ){  // # define 35 2*12+11 
+          printf("len of song:%d\n",song_text.length() );
+            int j=0;
+            for (int i=0 ; i<song_text.length()-1 ;i+2){
+              printf("i is :%d\n",i);
+                printf("j is :%d\n",j);
+              if(song_text[i+1] == '1'){
+                /*printf("first if\n");
+                printf("i is :%d\n",i);
+                printf("j is :%d\n",j);*/
+                my_notes[j] = song_text[i];
+              }
+              else if(song_text[i+1] == '2'){
+                /*printf("second if\n");
+                printf("i is :%d\n",i);
+                printf("j is :%d\n",j);*/
+                my_notes[j] = "L" + song_text[i];
+              }
+              j++;    
+            }
+            printf("array is ready1\n");
+            /*for(; j < 13 ; j++){
+              my_notes[j] = "END";
+            } */ 
+            printf("array is ready2\n");
+          }
+          else {
+            bot.sendMessage(chat_id, "invalid input , please enter another one !", "");
+          }
+        }
+        else{
+          bot.sendMessage(chat_id, "invalid input , please enter another one !", "");
+        }
+        createNewSongFile(my_notes);
+        file_name = "/music_sheets/example.txt";
+        m_state = PLAYING_SONG;
+        start = true;
+        finished = false;
+        b_state = STATS;
+
       }
       else if(text == "go back"){
         bot_print_menu(chat_id);
@@ -789,4 +842,21 @@ void play_note(int note_number){
       
 
       
+}
+
+void createNewSongFile(String * my_notes){
+  // Open a new file for writing (creates the file if it doesn't exist)
+  File myFile = SD.open("/music_sheets/example.txt", FILE_WRITE);
+
+  // Write data to the file
+  if (myFile) {
+    for (int i=0 ; i < my_notes->length(); i++){
+      myFile.println(my_notes[i]);
+    }
+    myFile.close();
+  } 
+  else {
+    Serial.println("Error opening file.");
+  }
+  
 }
