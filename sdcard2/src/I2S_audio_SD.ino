@@ -46,6 +46,7 @@ unsigned long lastTimeBotRan;
 
 //touch threshold
 const int threshold = 35;
+// telegramMessage message = bot.getUpdates();
 
 //touch sensors array
 bool touch_sensor_val[7] = {false,false,false,false,false,false,false};
@@ -75,6 +76,7 @@ void turn_lights_green();
 
 //for files
 String current_note_string;
+String next_note_string;
 int current_note_played = 0;
 bool note_played_in_epsilon_time = false;
 int start = true;
@@ -409,19 +411,18 @@ void playTone(const char *file_name,int pixel){
 void play_music(){
   audio.loop();
     unsigned long currentMillis = millis();
-    // String prev_note = "G\r";
+    //start -> get params ready + open file
     if(start){
-      printf("at start, opening file\n");
       //open file
       current_file= SD.open(file_name);  
       if(!current_file){
         Serial.print("couldn't open file!");
       } 
-      //update start
+      //update params
       start = false;
       current_note_played = 0;
+      next_note_string = current_file.readStringUntil('\n');
       
-      // note_played_in_epsilon_time = true;
     }
 
     if(currentMillis - note_read_millis > 1200){
@@ -433,7 +434,10 @@ void play_music(){
 
       note_read_millis = currentMillis; 
       //read next note
-      current_note_string = current_file.readStringUntil('\n');
+      current_note_string = next_note_string;
+
+      next_note_string = current_file.readStringUntil('\n');
+      int next_note_pixel = get_pixel(next_note_string);
 
       if(current_note_string == "C\r"){
         current_pixel = 0;
@@ -481,7 +485,7 @@ void play_music(){
       if(current_note_string != "NULL\r" && current_note_string != "END\r")
       {
         printf("turn on current pixel %d \n", current_pixel);
-        pixels.setPixelColor(current_pixel, pixels.Color(0, 200, 150));
+        pixels.setPixelColor(current_pixel, pixels.Color(0, 150, 0));
         pixels.show();
       }
       if(current_pixel == 20){
@@ -489,6 +493,14 @@ void play_music(){
       }
       else{
         current_note_played = 0;
+      }
+      // turn on next note pexil to red!
+      if(next_note_pixel == current_pixel){
+        //if current pixel and next pixel are the same turn pixel blue
+        turn_pixel_blue(next_note_pixel);
+      }
+      else{
+        turn_pixel_red(next_note_pixel);
       }
       last_played_wrong_note = -1;
 
@@ -540,7 +552,7 @@ void play_music(){
             printf("got wrong note, %d\n", i);
             // play note that was pressed
             play_note(i);
-            printf("if 22222222222222222222222222\n");
+            printf("if 22222222222333333333333333333333\n");
 
             // update wrong notes number
             wrong_notes++;
@@ -787,6 +799,44 @@ void play_note(int note_number){
     playTone("B_major.wav",1);
   }
       
+}
 
-      
+int get_pixel(String note){
+  int pexil_to_ret = 0;
+  if(note == "C\r"){
+    pexil_to_ret = 0;
+  }
+  else if(note == "D\r" || note == "LD\r"){
+    pexil_to_ret = 1;
+  }
+  else if(note == "E\r"){
+    pexil_to_ret = 2;
+  }
+  else if(note == "F\r"){
+    pexil_to_ret = 3;
+  }
+  else if(note == "G\r" || note == "LG\r"){
+    pexil_to_ret = 4;
+  }
+  else if(note == "A\r"){
+    pexil_to_ret = 5;
+  }
+  else if(note == "B\r"){
+    pexil_to_ret = 6;
+  }
+  else if(note == "NULL\r" || current_note_string == "END\r"){
+    pexil_to_ret = 20;
+    
+  }
+  return pexil_to_ret;
+
+}
+
+void turn_pixel_red(int pixel_num){
+  pixels.setPixelColor(pixel_num, pixels.Color(100, 0, 0));
+  pixels.show();
+}
+void turn_pixel_blue(int pixel_num){
+  pixels.setPixelColor(pixel_num, pixels.Color(0, 0, 150));
+  pixels.show();
 }
