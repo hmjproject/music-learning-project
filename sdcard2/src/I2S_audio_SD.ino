@@ -89,7 +89,8 @@ String file_name = "";
 bool long_note = false;
 
 
-String my_notes[13];
+String my_notes[13] = {"","","","","","","","","","","","",""};
+String song_text;
 
 //volume
 int volume = 18;
@@ -210,9 +211,10 @@ void handleNewMessages(int numNewMessages) {
         }
         printf("before if\n ");
         if(num_of_messages == 1){
-          String song_text = bot.messages[0].text;
+          song_text = bot.messages[0].text;
           FillArray(song_text);
           createNewSongFile();
+          printArray();
         }
         else{
           bot.sendMessage(chat_id, "invalid input , please enter another one !", "");
@@ -825,7 +827,10 @@ void createNewSongFile(){
 
   // Write data to the file
   if (myFile) {
-    for (int i=0 ; i < my_notes->length(); i++){
+    for (int i=0 ; i < 13; i++){
+      if(i>0 && my_notes[i-1] == "END"){
+        break;
+      }
       myFile.println(my_notes[i]);
     }
     myFile.close();
@@ -861,17 +866,26 @@ void createNewSongFile(){
 void FillArray(String song_text ){
   int j =0;
   if(song_text.length() > 0 && song_text.length() < 25 ){  // # define 35 2*12+11 
-    //printf("len of song:%d\n",song_text.length() );
+    printf("len of song:%d\n",song_text.length() );
     for (int k=0 ; k<((song_text.length())-1) ;k=k+2){
+      printf("current index: %d\n", k );
       if(song_text[k+1] == '1'){
-        my_notes[j]= song_text[k];
+        my_notes[j]= String(song_text[k]);
+        //printf("current character:%s\n",my_notes[j]);
       }
       else if(song_text[k+1] == '2'){
-        my_notes[j]= "L" +song_text[k];
+        my_notes[j]= "L" + String(song_text[k]);
+        //printf("current character:%s\n",my_notes[j]);
       }
       j++;
     }
     my_notes[j] = "END";
+    //printf("after end");
   }
 }
 
+void printArray(){
+  for (int i=0 ; i < 13; i++){
+    printf("%s\n", my_notes[i]);
+  }
+}
