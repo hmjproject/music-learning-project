@@ -72,6 +72,8 @@ void reconnect_to_wifi();
 void turn_off_lights();
 void turn_lights_red();
 void turn_lights_green();
+void bot_print_menu(String chat_id);
+
 
 //for files
 String current_note_string;
@@ -203,22 +205,26 @@ void handleNewMessages(int numNewMessages) {
         b_state = STATS;
       }
       else if (text == "my song"){
-        bot.sendMessage(chat_id, "enter a string of 12 characters!", "");
+        String message = "enter a string of 12 notes with apostrophes in between \n";
+        message += "example: A1,B2,NULL,A2,C1,G1,F2,G2,E1,D2,A1,A1! \n where 1 stands for a short note\n";
+        message += "and 2 stands for a long note \n";
+        bot.sendMessage(chat_id, message, "");
         // Check for new messages
-        int num_of_messages = bot.getUpdates(bot.last_message_received + 1);
-        while(!num_of_messages){
-          num_of_messages = bot.getUpdates(bot.last_message_received + 1);
-        }
-        printf("before if\n ");
-        if(num_of_messages == 1){
-          song_text = bot.messages[0].text;
-          FillArray(song_text);
-          createNewSongFile();
-          printArray();
-        }
-        else{
-          bot.sendMessage(chat_id, "invalid input , please enter another one !", "");
-        }
+        // int num_of_messages = bot.getUpdates(bot.last_message_received + 1);
+        // while(!num_of_messages){
+        //   num_of_messages = bot.getUpdates(bot.last_message_received + 1);
+        // }
+        // printf("before if\n ");
+        // if(num_of_messages == 1){
+        //   song_text = bot.messages[0].text;
+        //   FillArray(song_text);
+        //   createNewSongFile();
+        //   printArray();
+        // }
+        // else{
+        //   bot.sendMessage(chat_id, "invalid input , please enter another one !", "");
+        // }
+        while(!read_user_song());
         m_state = PLAYING_SONG;
         file_name = "/music_sheets/example.txt";
         start = true;
@@ -318,8 +324,6 @@ void handleNewMessages(int numNewMessages) {
         bot.sendMessage(chat_id, "Please choose a valid option", "");
       }
     }
-
-    
 
   }
 }
@@ -426,6 +430,28 @@ void loop()
   
 }
 
+int read_user_song(){
+  // Check for new messages
+  int num_of_messages = bot.getUpdates(bot.last_message_received + 1);
+  while(!num_of_messages){
+    num_of_messages = bot.getUpdates(bot.last_message_received + 1);
+  }
+  printf("before if\n ");
+  if(num_of_messages == 1){
+    song_text = bot.messages[0].text;
+    int filled_arr = FillArray(song_text);
+    if(filled_arr == -1){
+      return 0;
+    }
+    createNewSongFile();
+    printArray();
+    return 1;
+  }
+  else{
+    bot.sendMessage(current_chat_id, "invalid input, please enter another one!", "");
+    return 0;
+  }
+}
 
 void playTone(const char *file_name,int pixel){
   printf("giong to start playing music\n");
@@ -863,12 +889,24 @@ void createNewSongFile(){
   }
 }*/
 
-void FillArray(String song_text ){
+int FillArray(String song_text ){
   int j =0;
-  if(song_text.length() > 0 && song_text.length() < 25 ){  // # define 35 2*12+11 
-    printf("len of song:%d\n",song_text.length() );
-    for (int k=0 ; k<((song_text.length())-1) ;k=k+2){
-      printf("current index: %d\n", k );
+  printf("len of song:%d\n",song_text.length() );
+  for (int k=0; k<((song_text.length())-1); k=k+3){
+
+    //1.check input
+    if(song_text[k]!='A' && song_text[k]!='B' && song_text[k]!='C' 
+      && song_text[k]!='D' && song_text[k]!='E' && song_text[k]!='F' 
+      && song_text[k]!='G' && (song_text[k]!='N') && (k != 0 && song_text[k-1] != ',')){
+        bot.sendMessage(current_chat_id, "invalid input, please enter another one!", "");
+        return -1;
+    }
+    printf("current index: %d\n", k );
+    //if it starts with N then most likely the user inserted NULL
+    // 2.update array: there are two options, either the user entered a character A/B/C/..., or NULL, 
+    if(song_text[k] != 'N'){
+      // A/B/C/...
+      // check if note is long or short
       if(song_text[k+1] == '1'){
         my_notes[j]= String(song_text[k]);
         //printf("current character:%s\n",my_notes[j]);
@@ -877,11 +915,24 @@ void FillArray(String song_text ){
         my_notes[j]= "L" + String(song_text[k]);
         //printf("current character:%s\n",my_notes[j]);
       }
-      j++;
     }
-    my_notes[j] = "END";
-    //printf("after end");
+    else{
+      //check if it is null
+      if(song_text.length() <= (k+4)|| song_text[k+1]!='U' || song_text[k+2]!='L' || song_text[k+3]!='L'){
+        //invalid input
+        bot.sendMessage(current_chat_id, "invalid input, please enter another one!", "");
+        return -1;
+
+      }
+      my_notes[j]= "NULL";
+      // the for loop increases k by 3 already, thus only increase k by 2
+      k+=2;
+    }
+    j++;
   }
+  my_notes[j] = "END";
+  return 0;
+  //printf("after end");
 }
 
 void printArray(){
