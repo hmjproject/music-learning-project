@@ -450,11 +450,7 @@ void play_music(){
       index11 = 0;
     }
 
-<<<<<<< HEAD
-    if((currentMillis - note_read_millis > 1200 && !long_note) || (long_note && currentMillis - note_read_millis > 2400)){
-=======
     if((currentMillis - note_read_millis > 1200 && !long_note) || (long_note && currentMillis - note_read_millis > 2400) ){
->>>>>>> fa9355f4ae53aac0feb9bbf64aa1f3f32deb840c
       //reset long note param
       index11++;
       long_note = false;
