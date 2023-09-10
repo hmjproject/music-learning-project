@@ -76,6 +76,7 @@ String p12mn12 = "https://i.imgur.com/63HfeT7.jpg";
 
 
 
+
 //neopixel
 #define PIN 22
 #define NUMPIXELS 8
@@ -308,8 +309,9 @@ void handleNewMessages(int numNewMessages) {
         double st2=(delayed_notes/12)*100;
         printf("st2 is: %f\n",st2);
         String message = "your stats:\nwrong notes: " + String(st1,3) +" ❌"+"\nDelayed notes: " + String(st2,3) + " ⏰";
-        //bot.sendMessage(chat_id, message, "");
-        bot.sendPhoto(chat_id, choosePhoto(), message);
+        bot.sendMessage(chat_id, message, "");
+        String comment = pickComment();
+        bot.sendPhoto(chat_id, choosePhoto(), comment);
         bot_print_menu(chat_id);
         b_state = INSTRUCTION;
       }
@@ -321,9 +323,6 @@ void handleNewMessages(int numNewMessages) {
         bot.sendMessage(chat_id, "Please choose a valid option", "");
       }
     }
-
-    
-
   }
 }
 
@@ -949,15 +948,6 @@ String choosePhoto(){
   }
 }
 
-bool _if_multiple_notes_pressed(){
-  int counter = 0;
 
-  for(int i = 0; i < 7; i++){
-    if(touch_sensor_val[i]){
-      counter++;
-    }
-  }
 
-  return (counter > 1)?true:false;
-}
 
