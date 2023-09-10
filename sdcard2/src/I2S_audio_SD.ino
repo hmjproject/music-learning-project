@@ -76,6 +76,7 @@ String p12mn12 = "https://i.imgur.com/63HfeT7.jpg";
 
 
 
+
 //neopixel
 #define PIN 22
 #define NUMPIXELS 8
@@ -108,7 +109,7 @@ String photo_name = "";
 // long note
 bool long_note = false;
 //volume
-int volume = 18;
+int volume = 20;
 //statistics
 double wrong_notes = 0;
 double delayed_notes = 0;
@@ -308,8 +309,9 @@ void handleNewMessages(int numNewMessages) {
         double st2=(delayed_notes/12)*100;
         printf("st2 is: %f\n",st2);
         String message = "your stats:\nwrong notes: " + String(st1,3) +" ❌"+"\nDelayed notes: " + String(st2,3) + " ⏰";
-        //bot.sendMessage(chat_id, message, "");
-        bot.sendPhoto(chat_id, choosePhoto(), message);
+        bot.sendMessage(chat_id, message, "");
+        String comment = pickComment();
+        bot.sendPhoto(chat_id, choosePhoto(), comment);
         bot_print_menu(chat_id);
         b_state = INSTRUCTION;
       }
@@ -321,9 +323,6 @@ void handleNewMessages(int numNewMessages) {
         bot.sendMessage(chat_id, "Please choose a valid option", "");
       }
     }
-
-    
-
   }
 }
 
@@ -451,7 +450,7 @@ void play_music(){
       
     }
 
-    if(currentMillis - note_read_millis > 1200){
+    if((currentMillis - note_read_millis > 1200 && !long_note) || (long_note && currentMillis - note_read_millis > 2400)){
       //reset long note param
       long_note = false;
       //check if prev note was played
@@ -971,5 +970,18 @@ String choosePhoto(){
   }
 }
 
-
+String pickComment(){
+  if(wrong_notes == 0){
+    return ("Great job 🏆🎉");
+  }
+  else if(wrong_notes > 0 && wrong_notes < 7){
+    return ("Good job 🤩✨" );
+  }
+  else if(wrong_notes > 6 && wrong_notes < 12){
+    return ("It's OK, you can improve 😃💪🏻");
+  }
+  else{
+    return ("OOPS, life be like that sometimes 😐🔁");
+  }
+}
 
