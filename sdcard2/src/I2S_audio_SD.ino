@@ -450,7 +450,11 @@ void play_music(){
       index11 = 0;
     }
 
+<<<<<<< HEAD
+    if((currentMillis - note_read_millis > 1200 && !long_note) || (long_note && currentMillis - note_read_millis > 2400)){
+=======
     if((currentMillis - note_read_millis > 1200 && !long_note) || (long_note && currentMillis - note_read_millis > 2400) ){
+>>>>>>> fa9355f4ae53aac0feb9bbf64aa1f3f32deb840c
       //reset long note param
       index11++;
       long_note = false;
@@ -948,6 +952,18 @@ String choosePhoto(){
   }
 }
 
-
-
+String pickComment(){
+  if(wrong_notes == 0){
+    return ("Great job 🏆🎉");
+  }
+  else if(wrong_notes > 0 && wrong_notes < 7){
+    return ("Good job 🤩✨" );
+  }
+  else if(wrong_notes > 6 && wrong_notes < 12){
+    return ("It's OK, you can improve 😃💪🏻");
+  }
+  else{
+    return ("OOPS, life be like that sometimes 😐🔁");
+  }
+}
 
