@@ -205,8 +205,8 @@ void handleNewMessages(int numNewMessages) {
         b_state = STATS;
       }
       else if (text == "my song"){
-        String message = "enter a string of 12 notes with apostrophes in between \n";
-        message += "example: A1,B2,NULL,A2,C1,G1,F2,G2,E1,D2,A1,A1! \n where 1 stands for a short note\n";
+        String message = "enter a string of 12 notes with commas in between \n";
+        message += "example: A1,B2,NULL,A2,C1,G1,F2,G2,E1,D2,A1,A1! \nwhere 1 stands for a short note\n";
         message += "and 2 stands for a long note \n";
         bot.sendMessage(chat_id, message, "");
         // Check for new messages
@@ -929,6 +929,10 @@ int FillArray(String song_text ){
       k+=2;
     }
     j++;
+    if(j>12){
+      bot.sendMessage(current_chat_id, "long input, please enter another one!", "");
+      return -1;
+    }
   }
   my_notes[j] = "END";
   return 0;
