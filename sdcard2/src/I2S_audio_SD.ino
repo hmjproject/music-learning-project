@@ -930,49 +930,45 @@ bool _is_long_note(){
 }
 
 String choosePhoto(){
-  String returned_url ="";
-  switch(wrong_notes){
-    case 0:
-      returned_url = p12mn12;
-      break;
-    case 1:
-      returned_url = p11mn12;
-      break;
-    case 2:
-      returned_url = p10mn12;
-      break;
-    case 3:
-      returned_url = p9mn12;
-      break;
-    case 4:
-      returned_url = p8mn12;
-      break;
-    case 5:
-      returned_url = p7mn12;
-      break;
-    case 6:
-      returned_url = p6mn12;
-      break;
-    case 7:
-      returned_url = p5mn12;
-      break;
-    case 8:
-      returned_url = p4mn12;
-      break;
-    case 9:
-      returned_url = p3mn12;
-      break;
-    case 10:
-      returned_url = p2mn12;
-      break;
-    case 11:
-      returned_url = p1mn12;
-      break;
-    case 12:
-      returned_url = p0mn12;
-      break;
+  if(wrong_notes == 0){
+    return p12mn12;
   }
-  return returned_url;
+  else if (wrong_notes == 1){
+    return p11mn12;
+  }
+  else if (wrong_notes == 2){
+    return p10mn12;
+  }
+  else if (wrong_notes == 3){
+    return p9mn12;
+  }
+  else if (wrong_notes == 4){
+    return p8mn12;
+  }
+  else if (wrong_notes == 5){
+    return p7mn12;
+  }
+  else if (wrong_notes == 6){
+    return p6mn12;
+  }
+  else if (wrong_notes == 7){
+    return p5mn12;
+  }
+  else if (wrong_notes == 8){
+    return p4mn12;
+  }
+  else if (wrong_notes == 9){
+    return p3mn12;
+  }
+  else if (wrong_notes == 10){
+    return p2mn12;
+  }
+  else if (wrong_notes == 11){
+    return p1mn12;
+  }
+  else{
+    return p0mn12;
+  }
 }
 
 
