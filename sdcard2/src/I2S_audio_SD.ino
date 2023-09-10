@@ -48,6 +48,7 @@ unsigned long lastTimeBotRan;
 
 //touch threshold
 const int threshold = 35;
+// telegramMessage message = bot.getUpdates();
 
 //touch sensors array
 bool touch_sensor_val[7] = {false,false,false,false,false,false,false};
@@ -92,7 +93,8 @@ void turn_lights_green();
 
 //for files
 String current_note_string;
-int current_note_played = 0;
+String next_note_string;
+int current_note_played = 1;
 bool note_played_in_epsilon_time = false;
 int start = true;
 int finished = false;
@@ -383,7 +385,7 @@ void loop()
     if (millis() > lastTimeBotRan + botRequestDelay)  {
       int numNewMessages = bot.getUpdates(bot.last_message_received + 1);
       // printf("num of new messages is %d\n",numNewMessages);
-      if(numNewMessages) {
+      while(numNewMessages) {
         Serial.println("got response");
         handleNewMessages(numNewMessages);
         numNewMessages = bot.getUpdates(bot.last_message_received + 1);
@@ -435,23 +437,26 @@ void playTone(const char *file_name,int pixel){
 void play_music(){
   audio.loop();
     unsigned long currentMillis = millis();
-    // String prev_note = "G\r";
+    //start -> get params ready + open file
     if(start){
-      printf("at start, opening file\n");
       //open file
       current_file= SD.open(file_name);  
       if(!current_file){
         Serial.print("couldn't open file!");
       } 
-      //update start
+      //update params
       start = false;
-      current_note_played = 0;
+      current_note_played = 1;
+      next_note_string = current_file.readStringUntil('\n');
       
-      // note_played_in_epsilon_time = true;
     }
 
     if(currentMillis - note_read_millis > 1200){
+      //reset long note param
+      long_note = false;
+      //check if prev note was played
       if(!current_note_played && last_played_wrong_note == -1){
+        printf("updating wrong notes ----------------> \n");
         wrong_notes++;
       }
       //turn off previous pexil
@@ -459,9 +464,16 @@ void play_music(){
 
       note_read_millis = currentMillis; 
       //read next note
-      current_note_string = current_file.readStringUntil('\n');
-
-      if(current_note_string == "C\r"){
+      current_note_string = next_note_string;
+      //check if current note is long
+      if(_is_long_note()){
+        long_note = true;
+      }
+      // get next note ready
+      next_note_string = current_file.readStringUntil('\n');
+      int next_note_pixel = get_pixel(next_note_string);
+      current_pixel = get_pixel(current_note_string);
+      /*if(current_note_string == "C\r"){
         current_pixel = 0;
       }
       else if(current_note_string == "D\r"){
@@ -487,8 +499,9 @@ void play_music(){
       }
       else if(current_note_string == "LD\r"){
         current_pixel = 1;
-      }
-      else if(current_note_string == "NULL\r"){
+      }*/
+      //
+      if(current_note_string == "NULL\r"){
         turn_off_lights();
         current_pixel = 20;
         
@@ -504,18 +517,30 @@ void play_music(){
         printf("delayed note number ----------------> %f\n",delayed_notes);
 
       }
-      if(current_note_string != "NULL\r" && current_note_string != "END\r")
-      {
-        printf("turn on current pixel %d \n", current_pixel);
-        pixels.setPixelColor(current_pixel, pixels.Color(0, 200, 150));
-        pixels.show();
-      }
+      // if(current_note_string != "NULL\r" && current_note_string != "END\r")
+      // {
+      //   printf("turn on current pixel %d \n", current_pixel);
+      //   pixels.setPixelColor(current_pixel, pixels.Color(0, 150, 0));
+      //   pixels.show();
+      // }
+      //turn current pixel green
+      turn_pixel_green(current_pixel);
+      //if current note is null then consider it played
       if(current_pixel == 20){
         current_note_played = 1;
       }
       else{
         current_note_played = 0;
       }
+      //turn on next pixel
+      if(next_note_pixel == current_pixel){
+        //if current pixel and next pixel are the same turn pixel blue
+        turn_pixel_blue(next_note_pixel);
+      }
+      else{
+        turn_pixel_red(next_note_pixel);
+      }
+
       last_played_wrong_note = -1;
 
     }
@@ -566,7 +591,7 @@ void play_music(){
             printf("got wrong note, %d\n", i);
             // play note that was pressed
             play_note(i);
-            printf("if 22222222222222222222222222\n");
+            printf("if 22222222222333333333333333333333\n");
 
             // update wrong notes number
             wrong_notes++;
@@ -782,7 +807,12 @@ void read_touch_sensors(){
 void play_note(int note_number){
   
   if(note_number == 0){
-    playTone("C_major.wav",1);
+    if(long_note){
+      playTone("C_long_major.wav",1);
+    }
+    else{
+      playTone("C_major.wav",1);
+    }
   }
   else if(note_number == 1){
     if(long_note){
@@ -793,10 +823,20 @@ void play_note(int note_number){
     }
   }
   else if(note_number == 2){
-    playTone("E_major.wav",1);
+    if(long_note){
+      playTone("E_long_major.wav",1);
+    }
+    else{
+      playTone("E_major.wav",1);
+    }
   }
   else if(note_number == 3){
-    playTone("F_major.wav",1);
+    if(long_note){
+      playTone("F_long_major.wav",1);
+    }
+    else{
+      playTone("F_major.wav",1);
+    }
   }
   else if(note_number == 4){
     if(long_note){
@@ -807,14 +847,86 @@ void play_note(int note_number){
     }
   }
   else if(note_number == 5){
-    playTone("A_major.wav",1);
+    if(long_note){
+      playTone("A_long_major.wav",1);
+    }
+    else{
+      playTone("A_major.wav",1);
+    }
   }
   else if(note_number == 6){
-    playTone("B_major.wav",1);
+    if(long_note){
+      playTone("B_long_major.wav",1);
+    }
+    else{
+      playTone("E_major.wav",1);
+    }
   }
       
+}
 
-      
+int get_pixel(String note){
+  int pexil_to_ret = 0;
+  if(note == "C\r" || note == "LC\r"){
+    pexil_to_ret = 0;
+  }
+  else if(note == "D\r" || note == "LD\r"){
+    pexil_to_ret = 1;
+  }
+  else if(note == "E\r" || note == "LE\r"){
+    pexil_to_ret = 2;
+  }
+  else if(note == "F\r" || note == "LF\r"){
+    pexil_to_ret = 3;
+  }
+  else if(note == "G\r" || note == "LG\r"){
+    pexil_to_ret = 4;
+  }
+  else if(note == "A\r" || note == "LA\r"){
+    pexil_to_ret = 5;
+  }
+  else if(note == "B\r" || note == "LB\r"){
+    pexil_to_ret = 6;
+  }
+  else if(note == "NULL\r" || current_note_string == "END\r"){
+    pexil_to_ret = 20;
+    
+  }
+  return pexil_to_ret;
+
+}
+
+void turn_pixel_red(int pixel_num){
+  if(pixel_num == 20){
+    return;
+  }
+  pixels.setPixelColor(pixel_num, pixels.Color(100, 0, 0));
+  pixels.show();
+}
+
+void turn_pixel_blue(int pixel_num){
+  if(pixel_num == 20){
+    return;
+  }
+  pixels.setPixelColor(pixel_num, pixels.Color(0, 0, 150));
+  pixels.show();
+}
+
+void turn_pixel_green(int pixel_num){
+  if(pixel_num == 20){
+    return;
+  }
+  pixels.setPixelColor(pixel_num, pixels.Color(0, 150, 0));
+  pixels.show();
+}
+
+bool _is_long_note(){
+  if(current_note_string == "LD\r" || current_note_string == "LE\r" || current_note_string == "LF\r"
+   || current_note_string == "LG\r" || current_note_string == "LA\r" || current_note_string == "LB\r" 
+   || current_note_string == "LC\r"){
+    return true;
+  }
+  return false;
 }
 
 String choosePhoto(){
