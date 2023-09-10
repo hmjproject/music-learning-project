@@ -58,8 +58,21 @@ Audio audio;
 unsigned long touch_sensor_millis = 0, touch_sensor_millis_1 = 0, note_read_millis = 0;
 bool pressed = true;
 
-//URL
-String test_photo_url = "https://i.imgur.com/WL7kmln.jpg";
+//URL - photo
+String p0mn12 = "https://i.imgur.com/9aQd3wM.jpg";
+String p1mn12 = "https://i.imgur.com/WL7kmln.jpg";
+String p2mn12 = "https://i.imgur.com/E6oNOEx.jpg";
+String p3mn12 = "https://i.imgur.com/wQCJUfU.jpg";
+String p4mn12 = "https://i.imgur.com/JmLg1dr.jpg";
+String p5mn12 = "https://i.imgur.com/k8HnRLs.jpg";
+String p6mn12 = "https://i.imgur.com/h1jKlm7.jpg";
+String p7mn12 = "https://i.imgur.com/UShvin3.jpg";
+String p8mn12 = "https://i.imgur.com/kBXbx2c.jpg";
+String p9mn12 = "https://i.imgur.com/isPoQZE.jpg";
+String p10mn12 = "https://i.imgur.com/Bvd3pzc.jpg";
+String p11mn12 = "https://i.imgur.com/a2uKUYN.jpg";
+String p12mn12 = "https://i.imgur.com/63HfeT7.jpg";
+
 
 
 //neopixel
@@ -293,9 +306,9 @@ void handleNewMessages(int numNewMessages) {
         double st2=(delayed_notes/12)*100;
         printf("st2 is: %f\n",st2);
         String message = "your stats:\nwrong notes: " + String(st1,3) +" ❌"+"\nDelayed notes: " + String(st2,3) + " ⏰";
-        bot.sendMessage(chat_id, message, "");
-        bot.sendPhoto(chat_id, test_photo_url, "your scoooooore :)))))))");
-         bot_print_menu(chat_id);
+        //bot.sendMessage(chat_id, message, "");
+        bot.sendPhoto(chat_id, choosePhoto(), message);
+        bot_print_menu(chat_id);
         b_state = INSTRUCTION;
       }
       else if(text == "go back to menu🔙"){
@@ -802,6 +815,52 @@ void play_note(int note_number){
       
 
       
+}
+
+String choosePhoto(){
+  String returned_url ="";
+  switch(wrong_notes){
+    case 0:
+      returned_url = p12mn12;
+      break;
+    case 1:
+      returned_url = p11mn12;
+      break;
+    case 2:
+      returned_url = p10mn12;
+      break;
+    case 3:
+      returned_url = p9mn12;
+      break;
+    case 4:
+      returned_url = p8mn12;
+      break;
+    case 5:
+      returned_url = p7mn12;
+      break;
+    case 6:
+      returned_url = p6mn12;
+      break;
+    case 7:
+      returned_url = p5mn12;
+      break;
+    case 8:
+      returned_url = p4mn12;
+      break;
+    case 9:
+      returned_url = p3mn12;
+      break;
+    case 10:
+      returned_url = p2mn12;
+      break;
+    case 11:
+      returned_url = p1mn12;
+      break;
+    case 12:
+      returned_url = p0mn12;
+      break;
+  }
+  return returned_url;
 }
 
 
