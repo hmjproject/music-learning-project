@@ -26,7 +26,7 @@ UniversalTelegramBot bot(BOTtoken, client);
 int botRequestDelay = 1000;
 unsigned long lastTimeBotRan;
 
-
+int index11 = 0;
 
 // Digital I/O used
 #define SD_CS          5
@@ -447,11 +447,12 @@ void play_music(){
       start = false;
       current_note_played = 1;
       next_note_string = current_file.readStringUntil('\n');
-      
+      index11 = 0;
     }
 
-    if((currentMillis - note_read_millis > 1200 && !long_note) || (long_note && currentMillis - note_read_millis > 2400)){
+    if((currentMillis - note_read_millis > 1200 && !long_note) || (long_note && currentMillis - note_read_millis > 2400) ){
       //reset long note param
+      index11++;
       long_note = false;
       //check if prev note was played
       if(!current_note_played && last_played_wrong_note == -1){
@@ -472,34 +473,8 @@ void play_music(){
       next_note_string = current_file.readStringUntil('\n');
       int next_note_pixel = get_pixel(next_note_string);
       current_pixel = get_pixel(current_note_string);
-      /*if(current_note_string == "C\r"){
-        current_pixel = 0;
-      }
-      else if(current_note_string == "D\r"){
-        current_pixel = 1;
-      }
-      else if(current_note_string == "E\r"){
-        current_pixel = 2;
-      }
-      else if(current_note_string == "F\r"){
-        current_pixel = 3;
-      }
-      else if(current_note_string == "G\r"){
-        current_pixel = 4;
-      }
-      else if(current_note_string == "A\r"){
-        current_pixel = 5;
-      }
-      else if(current_note_string == "B\r"){
-        current_pixel = 6;
-      }
-      else if(current_note_string == "LG\r"){
-        current_pixel = 4;
-      }
-      else if(current_note_string == "LD\r"){
-        current_pixel = 1;
-      }*/
-      //
+      printf("current note: %s\n",current_note_string);
+      printf("next note: %s\n", next_note_string);
       if(current_note_string == "NULL\r"){
         turn_off_lights();
         current_pixel = 20;
@@ -512,32 +487,35 @@ void play_music(){
         current_pixel = 20;
         audio.stopSong();
         current_file.close();
-        printf("wrong note number ----------------> %f\n",wrong_notes);
-        printf("delayed note number ----------------> %f\n",delayed_notes);
+        // printf("wrong note number ----------------> %f\n",wrong_notes);
+        // printf("delayed note number ----------------> %f\n",delayed_notes);
 
       }
-      // if(current_note_string != "NULL\r" && current_note_string != "END\r")
-      // {
-      //   printf("turn on current pixel %d \n", current_pixel);
-      //   pixels.setPixelColor(current_pixel, pixels.Color(0, 150, 0));
-      //   pixels.show();
-      // }
-      //turn current pixel green
-      turn_pixel_green(current_pixel);
+
+      if(current_note_string == "End\r"){
+        turn_off_lights();
+      }
+      else if(next_note_pixel == current_pixel){
+        printf("turning pixels blue, index: %d, next_note: %d, current: %d\n",index11, next_note_pixel, current_pixel);
+        
+        //if current pixel and next pixel are the same turn pixel blue
+        turn_pixel_blue(next_note_pixel);
+      }
+      else{
+        printf("turning current pixel green, %d\n",index11);
+        turn_pixel_green(current_pixel);
+        if(next_note_string != "END\r"){
+          printf("turning next pixel red, %d\n",index11);
+          //turn current pixel green
+          turn_pixel_red(next_note_pixel);
+        }
+      }
       //if current note is null then consider it played
       if(current_pixel == 20){
         current_note_played = 1;
       }
       else{
         current_note_played = 0;
-      }
-      //turn on next pixel
-      if(next_note_pixel == current_pixel){
-        //if current pixel and next pixel are the same turn pixel blue
-        turn_pixel_blue(next_note_pixel);
-      }
-      else{
-        turn_pixel_red(next_note_pixel);
       }
 
       last_played_wrong_note = -1;
@@ -571,12 +549,12 @@ void play_music(){
       if(touch_sensor_val[current_pixel]){
         // play note
         play_note(current_pixel);
-        printf("if 22222222222222222222222222\n");
+        // printf("if 22222222222222222222222222\n");
 
         // update that note has been played
         current_note_played = 1;
         delayed_notes++;
-        printf("delayed time: %d\n",currentMillis - note_read_millis);
+        // printf("delayed time: %d\n",currentMillis - note_read_millis);
       }
       else{
         for(int i = 0; i < 7; i++){
@@ -584,13 +562,13 @@ void play_music(){
             continue;
           }
           if(touch_sensor_val[i]){
-            if(last_played_wrong_note == i){
+            if(last_played_wrong_note != -1){
               continue;
             }
-            printf("got wrong note, %d\n", i);
+            // printf("got wrong note, %d\n", i);
             // play note that was pressed
             play_note(i);
-            printf("if 22222222222333333333333333333333\n");
+            // printf("if 22222222222333333333333333333333\n");
 
             // update wrong notes number
             wrong_notes++;
@@ -612,13 +590,13 @@ void play_music(){
           continue;
         }
         if(touch_sensor_val[i]){
-          if(last_played_wrong_note == i){
+          if(last_played_wrong_note != -1){
             continue;
           }
-          printf("got wrong note, %d\n", i);
+          // printf("got wrong note, %d\n", i);
           // play note that was pressed
           play_note(i);
-          printf("if 3333333333333333333333333\n");
+          // printf("if 3333333333333333333333333\n");
 
           // update wrong notes number
           wrong_notes++;
@@ -887,7 +865,7 @@ int get_pixel(String note){
   else if(note == "B\r" || note == "LB\r"){
     pexil_to_ret = 6;
   }
-  else if(note == "NULL\r" || current_note_string == "END\r"){
+  else{
     pexil_to_ret = 20;
     
   }
@@ -970,18 +948,6 @@ String choosePhoto(){
   }
 }
 
-String pickComment(){
-  if(wrong_notes == 0){
-    return ("Great job 🏆🎉");
-  }
-  else if(wrong_notes > 0 && wrong_notes < 7){
-    return ("Good job 🤩✨" );
-  }
-  else if(wrong_notes > 6 && wrong_notes < 12){
-    return ("It's OK, you can improve 😃💪🏻");
-  }
-  else{
-    return ("OOPS, life be like that sometimes 😐🔁");
-  }
-}
+
+
 
