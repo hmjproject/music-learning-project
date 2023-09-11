@@ -17,6 +17,8 @@ const char* password = "openday23";
 // const char* password = "0502214066";
 // const char* ssid = "miral";
 // const char* password = "jessyj2772";
+// const char* ssid = "Hadeel";
+// const char* password = "1234hadeel";
 
 //Telegram BOT
 #define BOTtoken "6382002255:AAFPCttqq1v4URJGQbHBJ9fzRpcZedvYxaw"
@@ -126,8 +128,9 @@ enum bot_states{
   CHOOSE_MUSIC,
   VOLUME,
   STATS,
-  STATS_MENU
-};
+  STATS_MENU,
+  GAME_INSTR 
+  };
 
 enum machine_state{
   PLAYING_SONG,
@@ -175,7 +178,7 @@ void handleNewMessages(int numNewMessages) {
       if (text == "/start") {
         String welcome = "Welcome, " + from_name + ".🙋‍♀️\n";
         welcome += "what would you like to do❓\n\n";
-        String keyboardJson = "[[\"play music 🎼\" ,\"settings ⚙\" ]]";
+        String keyboardJson = "[[\"Play music 🎼\" ,\"Settings ⚙\" ],[ \"Game Instructions 🎹\"]]";
         bot.sendMessageWithReplyKeyboard(chat_id, welcome, "", keyboardJson, true); 
         b_state = INSTRUCTION;
       }
@@ -198,6 +201,15 @@ void handleNewMessages(int numNewMessages) {
         String keyboardJson = "[[\"song1\",\"song2\" ,\"song3\",\"play freely\"],[ \"go back 🔙\"]]";
         bot.sendMessageWithReplyKeyboard(chat_id, print_text, "", keyboardJson, true); 
         b_state = CHOOSE_MUSIC;
+      }
+      else if(text == "Game Instructions 🎹"){
+        String print_text = "Welcome to our interactive piano learning game! 🎹 \nTo get started, simply select a song of your choice by clicking on 'Choose Song.'. \n";
+        print_text += "Once you've made your selection, \nthe lights will illuminate following these guidelines:\n";
+        print_text += "🟢 Green: Indicates the note you should play. \n🔴 Red: Signals the next note to be played.\n";
+        print_text += "🔵 Blue: Highlights when the current note and the next note are identical. \nEnjoy!";
+        String keyboardJson = "[[ \"go back 🔙\"]]";
+        bot.sendMessageWithReplyKeyboard(chat_id, print_text, "", keyboardJson, true); 
+        b_state = GAME_INSTR;
       }
       else{
         bot.sendMessage(chat_id, "Please insert one of the options: settings or play music", "");
@@ -265,7 +277,9 @@ void handleNewMessages(int numNewMessages) {
         if(volume < 21){
           volume++;
           audio.setVolume(volume);
-          bot.sendMessage(chat_id, "Increased volume", "");
+          double vol_percent = ((double)volume)*100/ 21;
+          String welcome = "Increased volume to " + String(vol_percent)+"%";
+          bot.sendMessage(chat_id, welcome, "");
         }
         else{
           bot.sendMessage(chat_id, "Can't increse the volume anymore 🤷‍♀️", "");
@@ -277,7 +291,9 @@ void handleNewMessages(int numNewMessages) {
         if(volume > 0){
           volume--;
           audio.setVolume(volume);
-          bot.sendMessage(chat_id, "Decreased volume", "");
+          double vol_percent = ((double)volume)*100/ 21;
+          String welcome = "decreased volume to " + String(vol_percent) + "%";
+          bot.sendMessage(chat_id, welcome, "");
         }
         else{
           bot.sendMessage(chat_id, "Can't decrease the volume anymore 🤷‍♀️", "");
@@ -325,12 +341,21 @@ void handleNewMessages(int numNewMessages) {
         bot.sendMessage(chat_id, "Please choose a valid option", "");
       }
     }
+    else if(b_state == GAME_INSTR){
+      if(text == "go back 🔙"){
+        bot_print_menu(chat_id);
+        b_state = INSTRUCTION;
+      }
+      else{
+        bot.sendMessage(chat_id, "Please choose a valid option", "");
+      }
+    }
   }
 }
 
 void bot_print_menu(String chat_id){
   String welcome = "What would you like to do❓\n";
-  String keyboardJson = "[[\"play music 🎼\" ,\"settings ⚙\" ]]";
+  String keyboardJson = "[[\"play music 🎼\" ,\"settings ⚙\" ],[ \"Game Instructions🎹\"]]";
   bot.sendMessageWithReplyKeyboard(chat_id, welcome, "", keyboardJson, true);
 }
 
@@ -377,6 +402,8 @@ void setup() {
 void loop()
 {
   audio.loop();
+  check_wifi_connection();
+
 
   if(m_state == WAITING_FOR_COMMANDS){
     for(int i = 0; i < 8; i++){
