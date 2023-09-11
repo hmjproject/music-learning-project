@@ -15,6 +15,8 @@ const char* ssid = "CS_conference";
 const char* password = "openday23";
 // const char* ssid = "baba";
 // const char* password = "0502214066";
+// const char* ssid = "miral";
+// const char* password = "jessyj2772";
 
 //Telegram BOT
 #define BOTtoken "6382002255:AAFPCttqq1v4URJGQbHBJ9fzRpcZedvYxaw"
@@ -354,13 +356,14 @@ void setup() {
 
   //----------------- Connect to Wi-Fi ----------------------
   WiFi.mode(WIFI_STA);
-  WiFi.begin(ssid, password);
+  // WiFi.begin(ssid, password);
+  check_wifi_connection();
   client.setCACert(TELEGRAM_CERTIFICATE_ROOT); // Add root certificate for api.telegram.org
 
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(1000);
-    Serial.println("Connecting to WiFi..");
-  }
+  // while (WiFi.status() != WL_CONNECTED) {
+  //   delay(1000);
+  //   Serial.println("Connecting to WiFi..");
+  // }
   // Print ESP32 Local IP Address
   Serial.println(WiFi.localIP());
 
@@ -723,9 +726,9 @@ void check_touch_values(){
 
 
 void reconnect_to_wifi(){
-  int status = WL_IDLE_STATUS;
-  while (status != WL_CONNECTED) {
-    status = WiFi.begin(ssid, password);
+  WiFi.begin(ssid, password);
+  while (WiFi.status()  != WL_CONNECTED) {
+    delay(1000);
     // Serial.print(".");
     printf("reconnecting...\n");
     delay(300);
