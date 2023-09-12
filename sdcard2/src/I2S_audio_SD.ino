@@ -205,7 +205,7 @@ void handleNewMessages(int numNewMessages) {
       }
       else if (text == "Play music 🎼") {
         String print_text = "Which song would you like to play❓\n";
-        String keyboardJson = "[[\"DoReMi\",\"Happy Birthday\" ,\"Jingle Bells\",\"play freely\",\"my song\"],[ \"Go back 🔙\"]]";
+        String keyboardJson = "[[\"DoReMi\",\"Happy Birthday\" ,\"Old Macdonalds\",\"my song\"],[ \"Go back 🔙\"]]";
         bot.sendMessageWithReplyKeyboard(chat_id, print_text, "", keyboardJson, true); 
         b_state = CHOOSE_MUSIC;
       }
@@ -243,10 +243,10 @@ void handleNewMessages(int numNewMessages) {
         finished = false;
         b_state = STATS;
       }
-      else if(text == "Jingle Bells"){
+      else if(text == "Old Macdonalds"){
         m_state = PLAYING_SONG;
         bot.sendMessage(chat_id, "Going to play music💃🏻", "");
-        file_name = "/music_sheets/JingleBells.txt";
+        file_name = "/music_sheets/OldMac.txt";
         start = true;
         finished = false;
         b_state = STATS;
@@ -473,21 +473,21 @@ void loop()
   /*
   for debug! we can't support this since we can't accept messages when playing music
   */
-  if(m_state == PLAY_FREELY){
-    unsigned long currentMillis = millis();
-    if ( (currentMillis - touch_sensor_millis_1 > 20) ) {
-      touch_sensor_millis = currentMillis;
-      read_touch_sensors();
-      // is the right note pressed?
-      for(int i = 0; i < 8; i++){
-        if(touch_sensor_val[i]){
-          printf("in sensor %d\n",i);
-          play_note(i);
+  // if(m_state == PLAY_FREELY){
+  //   unsigned long currentMillis = millis();
+  //   if ( (currentMillis - touch_sensor_millis_1 > 20) ) {
+  //     touch_sensor_millis = currentMillis;
+  //     read_touch_sensors();
+  //     // is the right note pressed?
+  //     for(int i = 0; i < 8; i++){
+  //       if(touch_sensor_val[i]){
+  //         printf("in sensor %d\n",i);
+  //         play_note(i);
 
-        }
-      }
-    }
-  }
+  //       }
+  //     }
+  //   }
+  // }
   // if(m_state == DONE_PLAYING_SONG){
   //   //ask if he wants to 
   // }
