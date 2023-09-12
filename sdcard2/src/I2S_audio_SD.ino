@@ -8,6 +8,14 @@
 #include <WiFiClientSecure.h>
 #include <UniversalTelegramBot.h>   // Universal Telegram Bot Library written by Brian Lough: https://github.com/witnessmenow/Universal-Arduino-Telegram-Bot
 #include <ArduinoJson.h>
+/////Manar Start////////////////
+
+void resetESP32()
+ {
+ Serial.println("reset button pressed!");
+    esp_restart(); // This function will reset the ESP32
+}
+////Manar End///////////////
 
 //Telegram
 // network credentials
@@ -38,7 +46,7 @@ int index11 = 0;
 #define SPI_MISO      19
 #define SPI_SCK       18
 #define I2S_DOUT      25
-#define I2S_BCLK      27
+#define I2S_BCLK      3
 #define I2S_LRC       26
 
 //touch
@@ -78,7 +86,14 @@ String p10mn12 = "https://i.imgur.com/Bvd3pzc.jpg";
 String p11mn12 = "https://i.imgur.com/a2uKUYN.jpg";
 String p12mn12 = "https://i.imgur.com/63HfeT7.jpg";
 
+//resert esp32 Manar
+#define RESET_BUTTON 21
+bool flag = false;
 
+void buttonPressed() {
+  // Toggle the flag when the button is pressed
+  flag = !flag;
+}
 //neopixel
 #define PIN 22
 #define NUMPIXELS 8
@@ -401,6 +416,12 @@ void setup() {
   pinMode(SD_CS, OUTPUT);
   digitalWrite(SD_CS, HIGH);
 
+ // ------------------- reset pin setup --------------------
+//Manar
+
+  pinMode(RESET_BUTTON, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(RESET_BUTTON), buttonPressed, FALLING);
+ // state=digitalRead(RESET_BUTTON);
   //-------------------- spi setup --------------------
   SPI.begin(SPI_SCK, SPI_MISO, SPI_MOSI);
   SPI.setFrequency(1000000);
@@ -436,6 +457,11 @@ void setup() {
 
 void loop()
 {
+  
+  if (flag) {
+    resetESP32();
+  }
+
   audio.loop();
   check_wifi_connection();
 
