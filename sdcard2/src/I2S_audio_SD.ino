@@ -49,13 +49,14 @@ int index11 = 0;
 #define G_TOUCH_PIN     32
 #define A_TOUCH_PIN     15
 #define B_TOUCH_PIN     4
+#define D5_TOUCH_PIN     2
 
 //touch threshold
 const int threshold = 35;
 // telegramMessage message = bot.getUpdates();
 
 //touch sensors array
-bool touch_sensor_val[7] = {false,false,false,false,false,false,false};
+bool touch_sensor_val[8] = {false,false,false,false,false,false,false,false};
 
 //audio
 Audio audio;
@@ -748,6 +749,7 @@ void read_touch_sensors(){
   int G_touchValue = touchRead(G_TOUCH_PIN);
   int A_touchValue = touchRead(A_TOUCH_PIN);
   int B_touchValue = touchRead(B_TOUCH_PIN);
+  int D5_touchValue = touchRead(D5_TOUCH_PIN);
   touch_sensor_val[0] = (C_touchValue<threshold)? true : false;
   touch_sensor_val[1] = (D_touchValue<threshold)? true : false;
   touch_sensor_val[2] = (E_touchValue<threshold)? true : false;
@@ -755,6 +757,7 @@ void read_touch_sensors(){
   touch_sensor_val[4] = (G_touchValue<threshold)? true : false;
   touch_sensor_val[5] = (A_touchValue<threshold)? true : false;
   touch_sensor_val[6] = (B_touchValue<threshold)? true : false;
+  touch_sensor_val[7] = (D5_touchValue<threshold)? true : false;
   
 }
 
@@ -813,7 +816,15 @@ void play_note(int note_number){
       playTone("B_long_major.wav");
     }
     else{
-      playTone("E_major.wav");
+      playTone("B_major.wav");
+    }
+  }
+  else if(note_number == 7){
+    if(long_note){
+      playTone("D5_long_major.wav");
+    }
+    else{
+      playTone("D5_major.wav");
     }
   }
       
@@ -841,6 +852,9 @@ int get_pixel(String note){
   }
   else if(note == "B\r" || note == "LB\r"){
     pexil_to_ret = 6;
+  }
+  else if(note == "H\r" || note == "LH\r"){
+    pexil_to_ret = 7;
   }
   else{
     pexil_to_ret = 20;
@@ -877,7 +891,7 @@ void turn_pixel_green(int pixel_num){
 bool _is_long_note(){
   if(current_note_string == "LD\r" || current_note_string == "LE\r" || current_note_string == "LF\r"
    || current_note_string == "LG\r" || current_note_string == "LA\r" || current_note_string == "LB\r" 
-   || current_note_string == "LC\r"){
+   || current_note_string == "LC\r" || current_note_string == "LH\r"){
     return true;
   }
   return false;
