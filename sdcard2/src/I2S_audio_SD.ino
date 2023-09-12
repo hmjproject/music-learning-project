@@ -38,7 +38,7 @@ int index11 = 0;
 #define SPI_MISO      19
 #define SPI_SCK       18
 #define I2S_DOUT      25
-#define I2S_BCLK      27
+#define I2S_BCLK      3
 #define I2S_LRC       26
 
 //touch
@@ -49,7 +49,7 @@ int index11 = 0;
 #define G_TOUCH_PIN     32
 #define A_TOUCH_PIN     15
 #define B_TOUCH_PIN     4
-#define D5_TOUCH_PIN     2
+#define D5_TOUCH_PIN     27
 
 //touch threshold
 const int threshold = 35;
@@ -473,21 +473,21 @@ void loop()
   /*
   for debug! we can't support this since we can't accept messages when playing music
   */
-  // if(m_state == PLAY_FREELY){
-  //   unsigned long currentMillis = millis();
-  //   if ( (currentMillis - touch_sensor_millis_1 > 20) ) {
-  //     touch_sensor_millis = currentMillis;
-  //     read_touch_sensors();
-  //     // is the right note pressed?
-  //     for(int i = 0; i < 7; i++){
-  //       if(touch_sensor_val[i]){
-          
-  //         play_note(i);
+  if(m_state == PLAY_FREELY){
+    unsigned long currentMillis = millis();
+    if ( (currentMillis - touch_sensor_millis_1 > 20) ) {
+      touch_sensor_millis = currentMillis;
+      read_touch_sensors();
+      // is the right note pressed?
+      for(int i = 0; i < 8; i++){
+        if(touch_sensor_val[i]){
+          printf("in sensor %d\n",i);
+          play_note(i);
 
-  //       }
-  //     }
-  //   }
-  // }
+        }
+      }
+    }
+  }
   // if(m_state == DONE_PLAYING_SONG){
   //   //ask if he wants to 
   // }
@@ -651,7 +651,7 @@ void play_music(){
         // printf("delayed time: %d\n",currentMillis - note_read_millis);
       }
       else{
-        for(int i = 0; i < 7; i++){
+        for(int i = 0; i < 8; i++){
           if(i==current_pixel){
             continue;
           }
@@ -679,7 +679,7 @@ void play_music(){
       read_touch_sensors();
       // is the right note pressed?
       
-      for(int i = 0; i < 7; i++){
+      for(int i = 0; i < 8; i++){
         if(i == current_pixel){
           continue;
         }
@@ -757,7 +757,7 @@ void read_touch_sensors(){
   touch_sensor_val[4] = (G_touchValue<threshold)? true : false;
   touch_sensor_val[5] = (A_touchValue<threshold)? true : false;
   touch_sensor_val[6] = (B_touchValue<threshold)? true : false;
-  touch_sensor_val[7] = (D5_touchValue<threshold)? true : false;
+  touch_sensor_val[7] = (D5_touchValue<15)? true : false;
   
 }
 
