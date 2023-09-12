@@ -59,9 +59,9 @@ bool touch_sensor_val[7] = {false,false,false,false,false,false,false};
 
 //audio
 Audio audio;
+
 //millis
 unsigned long touch_sensor_millis = 0, touch_sensor_millis_1 = 0, note_read_millis = 0;
-bool pressed = true;
 
 //URL - photo
 String p0mn12 = "https://i.imgur.com/9aQd3wM.jpg";
@@ -79,41 +79,53 @@ String p11mn12 = "https://i.imgur.com/a2uKUYN.jpg";
 String p12mn12 = "https://i.imgur.com/63HfeT7.jpg";
 
 
-
-
 //neopixel
 #define PIN 22
 #define NUMPIXELS 8
 Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
 
 //funcs
-void playTone(const char *file_name, int pixel);
-void check_touch_values();
-void turn_off_lights();
 void play_music();
+void read_touch_sensors();
+// ----- wifi funcs -----
+void check_wifi_connection();
 void reconnect_to_wifi();
+// ----- note functions -----
+void playTone(const char *file_name);
+void play_note(int note_number);
+bool _is_long_note();
+int get_pixel(String note);
+// ------ light functions ------
 void turn_off_lights();
 void turn_lights_red();
 void turn_lights_green();
+void turn_pixel_red(int pixel_num);
+void turn_pixel_blue(int pixel_num);
+void turn_pixel_green(int pixel_num);
+// ----- Telegram funcs -----
+String choosePhoto();
+String pickComment();
+void bot_print_menu(String chat_id);
+void handleNewMessages(int numNewMessages);
+
 
 //for files
 String current_note_string;
 String next_note_string;
 int current_note_played = 1;
-bool note_played_in_epsilon_time = false;
 int start = true;
 int finished = false;
 File current_file;
-File imageFile;
 int current_pixel = 0;
-String note_file_name;
-int playing_music = false;
 String file_name = "";
-String photo_name = "";
+bool pressed = true;
+
 // long note
 bool long_note = false;
+
 //volume
 int volume = 20;
+
 //statistics
 double wrong_notes = 0;
 double delayed_notes = 0;
@@ -121,6 +133,7 @@ int last_played_wrong_note = -1;
 
 String current_chat_id = "";
 //states declaration 
+// for message sending and recieving
 enum bot_states{
   START,
   INSTRUCTION,
@@ -130,26 +143,14 @@ enum bot_states{
   STATS,
   STATS_MENU,
   GAME_INSTR 
-  };
+};
 
+// in order to distinguish between playing music and recieving messages 
 enum machine_state{
   PLAYING_SONG,
   WAITING_FOR_COMMANDS,
   PLAY_FREELY
 };
-
-bool isMoreDataAvailable();
-byte getNextByte();
-
-bool isMoreDataAvailable()
-{
-  return imageFile.available();
-}
-
-byte getNextByte()
-{
-  return imageFile.read();
-}
 
 //state values
 machine_state m_state = WAITING_FOR_COMMANDS;
@@ -312,13 +313,6 @@ void handleNewMessages(int numNewMessages) {
       }
     }
 
-    // else if(b_state == STATS){
-    //   String welcome = "What would you like to do?\n";
-    //   String keyboardJson = "[[\"get statistics\" ,\"go back to menu\" ]]";
-    //   bot.sendMessageWithReplyKeyboard(chat_id, welcome, "", keyboardJson, true); 
-    //   b_state = STATS_MENU;
-    // }
-
     else if(b_state == STATS_MENU){
       if(text == "get statistics📉")
       {
@@ -398,13 +392,12 @@ void setup() {
 
 }
 
-
 void loop()
 {
   audio.loop();
   check_wifi_connection();
 
-
+  // 
   if(m_state == WAITING_FOR_COMMANDS){
     for(int i = 0; i < 8; i++){
       pixels.setPixelColor(i, pixels.Color(0, 0, 0));
@@ -434,29 +427,31 @@ void loop()
     }
 
   }
-  if(m_state == PLAY_FREELY){
-    unsigned long currentMillis = millis();
-    if ( (currentMillis - touch_sensor_millis_1 > 20) ) {
-      touch_sensor_millis = currentMillis;
-      read_touch_sensors();
-      // is the right note pressed?
-      for(int i = 0; i < 7; i++){
-        if(touch_sensor_val[i]){
+  /*
+  for debug! we can't support this since we can't accept messages when playing music
+  */
+  // if(m_state == PLAY_FREELY){
+  //   unsigned long currentMillis = millis();
+  //   if ( (currentMillis - touch_sensor_millis_1 > 20) ) {
+  //     touch_sensor_millis = currentMillis;
+  //     read_touch_sensors();
+  //     // is the right note pressed?
+  //     for(int i = 0; i < 7; i++){
+  //       if(touch_sensor_val[i]){
           
-          play_note(i);
+  //         play_note(i);
 
-        }
-      }
-    }
-  }
+  //       }
+  //     }
+  //   }
+  // }
   // if(m_state == DONE_PLAYING_SONG){
   //   //ask if he wants to 
   // }
   
 }
 
-
-void playTone(const char *file_name,int pixel){
+void playTone(const char *file_name){
   printf("giong to start playing music\n");
   // pressed = true;
   audio.connecttoFS(SD,file_name);
@@ -471,7 +466,7 @@ void play_music(){
       //open file
       current_file= SD.open(file_name);  
       if(!current_file){
-        Serial.print("couldn't open file!");
+        Serial.println("couldn't open file!");
       } 
       //update params
       start = false;
@@ -486,7 +481,7 @@ void play_music(){
       long_note = false;
       //check if prev note was played
       if(!current_note_played && last_played_wrong_note == -1){
-        printf("updating wrong notes ----------------> \n");
+        Serial.println("updating wrong notes ----------------> \n");
         wrong_notes++;
       }
       //turn off previous pexil
@@ -636,122 +631,6 @@ void play_music(){
     }
 }
 
-
-void check_touch_values(){
-
-  int C_touchValue = touchRead(C_TOUCH_PIN);
-  int D_touchValue = touchRead(D_TOUCH_PIN);
-  int E_touchValue = touchRead(E_TOUCH_PIN);
-  int F_touchValue = touchRead(F_TOUCH_PIN);
-  int G_touchValue = touchRead(G_TOUCH_PIN);
-  int A_touchValue = touchRead(A_TOUCH_PIN);
-  int B_touchValue = touchRead(B_TOUCH_PIN);
-  if(C_touchValue < threshold){
-    if(current_pixel !=0){
-      bot.sendMessage(CHAT_ID, "touch sensor was touched, ouch!", "");
-      printf("C wrong note\n");
-    }
-    else if(!current_note_played){
-      bot.sendMessage(CHAT_ID, "touch sensor was touched, ouch!", "");
-      playTone("C_major.wav",1);
-      current_note_played=1;
-    }
-
-  }
-
-  if(D_touchValue < threshold){
-    if(current_pixel !=1){
-      bot.sendMessage(CHAT_ID, "touch sensor was touched, ouch!", "");
-
-      printf("D wrong note\n");
-    }
-    else if(!current_note_played){
-      bot.sendMessage(CHAT_ID, "touch sensor was touched, ouch!", "");
-
-      if(current_note_string=="LG\r"){
-        playTone("D_long_major.wav",1);
-      }
-      else{
-        playTone("D_major.wav",1);
-      }
-
-      current_note_played=1;
-    }
-  }
-
-  if(E_touchValue < threshold){
-    if(current_pixel != 2){
-      bot.sendMessage(CHAT_ID, "touch sensor was touched, ouch!", "");
-
-      printf("E wrong note\n");
-    }
-    else if(!current_note_played){
-      bot.sendMessage(CHAT_ID, "touch sensor was touched, ouch!", "");
-
-      playTone("E_major.wav",1);
-      current_note_played=1;
-    }
-  }
-  if(F_touchValue < threshold){
-
-    if(current_pixel != 3){
-      bot.sendMessage(CHAT_ID, "touch sensor was touched, ouch!", "");
-
-      printf("F wrong note\n");
-    }
-    else if(!current_note_played){
-      bot.sendMessage(CHAT_ID, "touch sensor was touched, ouch!", "");
-
-      playTone("F_major.wav",1);
-      current_note_played=1;
-    }
-  }
-  if(G_touchValue < threshold){
-    if(current_pixel != 4){
-      bot.sendMessage(CHAT_ID, "touch sensor was touched, ouch!", "");
-
-      printf("G wrong note\n");
-    }
-    else if(!current_note_played){
-      bot.sendMessage(CHAT_ID, "touch sensor was touched, ouch!", "");
-
-      if(current_note_string=="LG\r"){
-        playTone("G_long_major.wav",1);
-      }
-      else{
-        playTone("G_major.wav",1);
-      }
-
-      current_note_played=1;
-    }
-  }
-  if(A_touchValue < threshold){
-    bot.sendMessage(CHAT_ID, "touch sensor was touched, ouch!", "");
-
-    if(current_pixel !=5){
-      printf("A wrong note\n");
-    }
-    else if(!current_note_played){
-      playTone("A_major.wav",1);
-      current_note_played=1;
-    }
-  }
-
-  if(B_touchValue < threshold){
-      bot.sendMessage(CHAT_ID, "touch sensor was touched, ouch!", "");
-
-    if(current_pixel != 6){
-      printf("B wrong note\n");
-    }
-    else if(!current_note_played){
-      playTone("B_major.wav",1);
-      current_note_played=1;
-    }
-  }
-
-}
-
-
 void reconnect_to_wifi(){
   WiFi.begin(ssid, password);
   while (WiFi.status()  != WL_CONNECTED) {
@@ -815,58 +694,58 @@ void play_note(int note_number){
   
   if(note_number == 0){
     if(long_note){
-      playTone("C_long_major.wav",1);
+      playTone("C_long_major.wav");
     }
     else{
-      playTone("C_major.wav",1);
+      playTone("C_major.wav");
     }
   }
   else if(note_number == 1){
     if(long_note){
-      playTone("D_long_major.wav",1);
+      playTone("D_long_major.wav");
     }
     else{
-      playTone("D_major.wav",1);
+      playTone("D_major.wav");
     }
   }
   else if(note_number == 2){
     if(long_note){
-      playTone("E_long_major.wav",1);
+      playTone("E_long_major.wav");
     }
     else{
-      playTone("E_major.wav",1);
+      playTone("E_major.wav");
     }
   }
   else if(note_number == 3){
     if(long_note){
-      playTone("F_long_major.wav",1);
+      playTone("F_long_major.wav");
     }
     else{
-      playTone("F_major.wav",1);
+      playTone("F_major.wav");
     }
   }
   else if(note_number == 4){
     if(long_note){
-      playTone("G_long_major.wav",1);
+      playTone("G_long_major.wav");
     }
     else{
-      playTone("G_major.wav",1);
+      playTone("G_major.wav");
     }
   }
   else if(note_number == 5){
     if(long_note){
-      playTone("A_long_major.wav",1);
+      playTone("A_long_major.wav");
     }
     else{
-      playTone("A_major.wav",1);
+      playTone("A_major.wav");
     }
   }
   else if(note_number == 6){
     if(long_note){
-      playTone("B_long_major.wav",1);
+      playTone("B_long_major.wav");
     }
     else{
-      playTone("E_major.wav",1);
+      playTone("E_major.wav");
     }
   }
       
