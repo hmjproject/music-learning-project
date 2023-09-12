@@ -205,7 +205,7 @@ void handleNewMessages(int numNewMessages) {
       }
       else if (text == "Play music 🎼") {
         String print_text = "Which song would you like to play❓\n";
-        String keyboardJson = "[[\"DoReMi\",\"Happy Birthday\" ,\"song3\",\"play freely\",\"my song\"],[ \"Go back 🔙\"]]";
+        String keyboardJson = "[[\"DoReMi\",\"Happy Birthday\" ,\"Jingle Bells\",\"play freely\",\"my song\"],[ \"Go back 🔙\"]]";
         bot.sendMessageWithReplyKeyboard(chat_id, print_text, "", keyboardJson, true); 
         b_state = CHOOSE_MUSIC;
       }
@@ -243,10 +243,10 @@ void handleNewMessages(int numNewMessages) {
         finished = false;
         b_state = STATS;
       }
-      else if(text == "song3"){
+      else if(text == "Jingle Bells"){
         m_state = PLAYING_SONG;
         bot.sendMessage(chat_id, "Going to play music💃🏻", "");
-        file_name = "/music_sheets/oldMac.txt";
+        file_name = "/music_sheets/JingleBells.txt";
         start = true;
         finished = false;
         b_state = STATS;
