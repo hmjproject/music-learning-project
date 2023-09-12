@@ -191,15 +191,15 @@ void handleNewMessages(int numNewMessages) {
     
     else if(b_state == INSTRUCTION)
     {
-      if (text == "settings ⚙") {
-        String print_text = "which settings would like to change❓\n";
-        String keyboardJson = "[[\"volume 🔈\"]]";
+      if (text == "Settings ⚙") {
+        String print_text = "Which settings would like to change❓\n";
+        String keyboardJson = "[[\"Volume 🔈\"]]";
         bot.sendMessageWithReplyKeyboard(chat_id, print_text, "", keyboardJson, true); 
         b_state = SETTINGS;
       }
-      else if (text == "play music 🎼") {
+      else if (text == "Play music 🎼") {
         String print_text = "Which song would you like to play❓\n";
-        String keyboardJson = "[[\"song1\",\"song2\" ,\"song3\",\"play freely\"],[ \"go back 🔙\"]]";
+        String keyboardJson = "[[\"song1\",\"song2\" ,\"song3\",\"play freely\"],[ \"Go back 🔙\"]]";
         bot.sendMessageWithReplyKeyboard(chat_id, print_text, "", keyboardJson, true); 
         b_state = CHOOSE_MUSIC;
       }
@@ -208,12 +208,12 @@ void handleNewMessages(int numNewMessages) {
         print_text += "Once you've made your selection, \nthe lights will illuminate following these guidelines:\n";
         print_text += "🟢 Green: Indicates the note you should play. \n🔴 Red: Signals the next note to be played.\n";
         print_text += "🔵 Blue: Highlights when the current note and the next note are identical. \nEnjoy!";
-        String keyboardJson = "[[ \"go back 🔙\"]]";
+        String keyboardJson = "[[ \"Go back 🔙\"]]";
         bot.sendMessageWithReplyKeyboard(chat_id, print_text, "", keyboardJson, true); 
         b_state = GAME_INSTR;
       }
       else{
-        bot.sendMessage(chat_id, "Please insert one of the options: settings or play music", "");
+        bot.sendMessage(chat_id, "Please insert one of the options: Settings or Play music", "");
       }
     }
     
@@ -223,7 +223,7 @@ void handleNewMessages(int numNewMessages) {
       delayed_notes = 0;
       if(text == "song1"){
         m_state = PLAYING_SONG;
-        bot.sendMessage(chat_id, "going to play music💃🏻", "");
+        bot.sendMessage(chat_id, "Going to play music💃🏻", "");
         file_name = "/music_sheets/song1.txt";
         start = true;
         finished = false;
@@ -231,7 +231,7 @@ void handleNewMessages(int numNewMessages) {
       }
       else if(text == "song2"){
         m_state = PLAYING_SONG;
-        bot.sendMessage(chat_id, "going to play music💃🏻", "");
+        bot.sendMessage(chat_id, "Going to play music💃🏻", "");
         file_name = "/music_sheets/song2.txt";
         start = true;
         finished = false;
@@ -239,13 +239,13 @@ void handleNewMessages(int numNewMessages) {
       }
       else if(text == "song3"){
         m_state = PLAYING_SONG;
-        bot.sendMessage(chat_id, "going to play music💃🏻", "");
+        bot.sendMessage(chat_id, "Going to play music💃🏻", "");
         file_name = "/music_sheets/oldMac.txt";
         start = true;
         finished = false;
         b_state = STATS;
       }
-      else if(text == "go back 🔙"){
+      else if(text == "Go back 🔙"){
         bot_print_menu(chat_id);
         b_state = INSTRUCTION;
       }
@@ -262,9 +262,9 @@ void handleNewMessages(int numNewMessages) {
 
     else if(b_state == SETTINGS)
     {
-      if(text == "volume 🔈"){
-        String print_text = "would like to increase or decrease volume❓\n";
-        String keyboardJson = "[[\"increase volume🔊\",\"decrease volume🔉\"],[ \"go back 🔙\"]]";
+      if(text == "Volume 🔈"){
+        String print_text = "Would like to increase or decrease volume❓\n";
+        String keyboardJson = "[[\"increase volume🔊\",\"decrease volume🔉\"],[ \"Go back 🔙\"]]";
         bot.sendMessageWithReplyKeyboard(chat_id, print_text, "", keyboardJson, true); 
         b_state = VOLUME;
       }
@@ -293,7 +293,7 @@ void handleNewMessages(int numNewMessages) {
           volume--;
           audio.setVolume(volume);
           double vol_percent = ((double)volume)*100/ 21;
-          String welcome = "decreased volume to " + String(vol_percent) + "%";
+          String welcome = "Decreased volume to " + String(vol_percent) + "%";
           bot.sendMessage(chat_id, welcome, "");
         }
         else{
@@ -302,10 +302,8 @@ void handleNewMessages(int numNewMessages) {
         b_state = VOLUME;
 
       }
-      else if(text == "go back 🔙"){
-        String welcome = "What would you like to do❓\n";
-        String keyboardJson = "[[\"play music 🎼\" ,\"settings ⚙\" ]]";
-        bot.sendMessageWithReplyKeyboard(chat_id, welcome, "", keyboardJson, true); 
+      else if(text == "Go back 🔙"){
+        bot_print_menu(chat_id); 
         b_state = INSTRUCTION;
       }
       else{
@@ -320,14 +318,14 @@ void handleNewMessages(int numNewMessages) {
         printf("st1 is: %f\n",st1);
         double st2=(delayed_notes/12)*100;
         printf("st2 is: %f\n",st2);
-        String message = "your stats:\nwrong notes: " + String(st1,3) +" ❌"+"\nDelayed notes: " + String(st2,3) + " ⏰";
+        String message = "Your stats:\nWrong notes: " + String(st1,3) +" ❌"+"\nDelayed notes: " + String(st2,3) + " ⏰";
         bot.sendMessage(chat_id, message, "");
         String comment = pickComment();
         bot.sendPhoto(chat_id, choosePhoto(), comment);
         bot_print_menu(chat_id);
         b_state = INSTRUCTION;
       }
-      else if(text == "go back to menu🔙"){
+      else if(text == "Go back to menu🔙"){
         bot_print_menu(chat_id);
         b_state = INSTRUCTION;
       }
@@ -336,7 +334,7 @@ void handleNewMessages(int numNewMessages) {
       }
     }
     else if(b_state == GAME_INSTR){
-      if(text == "go back 🔙"){
+      if(text == "Go back 🔙"){
         bot_print_menu(chat_id);
         b_state = INSTRUCTION;
       }
@@ -349,7 +347,7 @@ void handleNewMessages(int numNewMessages) {
 
 void bot_print_menu(String chat_id){
   String welcome = "What would you like to do❓\n";
-  String keyboardJson = "[[\"play music 🎼\" ,\"settings ⚙\" ],[ \"Game Instructions🎹\"]]";
+  String keyboardJson = "[[\"Play music 🎼\" ,\"Settings ⚙\" ],[ \"Game Instructions 🎹\"]]";
   bot.sendMessageWithReplyKeyboard(chat_id, welcome, "", keyboardJson, true);
 }
 
@@ -421,7 +419,7 @@ void loop()
     if(finished){
       bot.sendMessage(current_chat_id, "Done playing! ✅", "");
       String welcome = "What would you like to do❓\n";
-      String keyboardJson = "[[\"get statistics📉\" ,\"go back to menu🔙\" ]]";
+      String keyboardJson = "[[\"get statistics📉\" ,\"Go back to menu🔙\" ]]";
       bot.sendMessageWithReplyKeyboard(current_chat_id, welcome, "", keyboardJson, true); 
       b_state = STATS_MENU;
     }
