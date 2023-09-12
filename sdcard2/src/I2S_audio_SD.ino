@@ -87,6 +87,7 @@ Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
 //funcs
 void play_music();
 void read_touch_sensors();
+int read_user_song();
 // ----- wifi funcs -----
 void check_wifi_connection();
 void reconnect_to_wifi();
@@ -203,7 +204,7 @@ void handleNewMessages(int numNewMessages) {
       }
       else if (text == "Play music 🎼") {
         String print_text = "Which song would you like to play❓\n";
-        String keyboardJson = "[[\"song1\",\"song2\" ,\"song3\",\"play freely\"],[ \"Go back 🔙\"]]";
+        String keyboardJson = "[[\"DoReMi\",\"Happy Birthday\" ,\"song3\",\"play freely\",\"my song\"],[ \"Go back 🔙\"]]";
         bot.sendMessageWithReplyKeyboard(chat_id, print_text, "", keyboardJson, true); 
         b_state = CHOOSE_MUSIC;
       }
@@ -225,7 +226,7 @@ void handleNewMessages(int numNewMessages) {
     {
       wrong_notes = 0;
       delayed_notes = 0;
-      if(text == "song1"){
+      if(text == "DoReMi"){
         m_state = PLAYING_SONG;
         bot.sendMessage(chat_id, "Going to play music💃🏻", "");
         file_name = "/music_sheets/song1.txt";
@@ -233,7 +234,7 @@ void handleNewMessages(int numNewMessages) {
         finished = false;
         b_state = STATS;
       }
-      else if(text == "song2"){
+      else if(text == "Happy Birthday"){
         m_state = PLAYING_SONG;
         bot.sendMessage(chat_id, "Going to play music💃🏻", "");
         file_name = "/music_sheets/song2.txt";
@@ -278,43 +279,8 @@ void handleNewMessages(int numNewMessages) {
           b_state = INSTRUCTION;
         }
         else{
-          m_state = PLAYING_SONG;
-          file_name = "/music_sheets/example.txt";
-          start = true;
-          finished = false;
-          b_state = STATS;
-        }
-
-      }
-      else if (text == "my song"){
-        String message = "enter a string of 12 notes with commas in between \n";
-        message += "example: A1,B2,NULL,A2,C1,G1,F2,G2,E1,D2,A1,A1! \nwhere 1 stands for a short note\n";
-        message += "and 2 stands for a long note \n";
-        bot.sendMessage(chat_id, message, "");
-        // Check for new messages
-        // int num_of_messages = bot.getUpdates(bot.last_message_received + 1);
-        // while(!num_of_messages){
-        //   num_of_messages = bot.getUpdates(bot.last_message_received + 1);
-        // }
-        // printf("before if\n ");
-        // if(num_of_messages == 1){
-        //   song_text = bot.messages[0].text;
-        //   FillArray(song_text);
-        //   createNewSongFile();
-        //   printArray();
-        // }
-        // else{
-        //   bot.sendMessage(chat_id, "invalid input , please enter another one !", "");
-        // }
-        int ret_val = 0;
-        while(!ret_val){
-          ret_val = read_user_song();
-        }
-        if(ret_val == 2){
-          bot_print_menu(chat_id);
-          b_state = INSTRUCTION;
-        }
-        else{
+          bot.sendMessage(chat_id, "Going to play music💃🏻", "");
+          delay(500);
           m_state = PLAYING_SONG;
           file_name = "/music_sheets/example.txt";
           start = true;
@@ -552,6 +518,7 @@ int read_user_song(){
     return 0;
   }
 }
+
 void playTone(const char *file_name){
   printf("giong to start playing music\n");
   // pressed = true;
@@ -973,9 +940,6 @@ String pickComment(){
   }
 }
 
-
-
-
 void createNewSongFile(){
   // Open a new file for writing (creates the file if it doesn't exist)
   File myFile = SD.open("/music_sheets/example.txt", FILE_WRITE);
@@ -995,7 +959,6 @@ void createNewSongFile(){
   }
   
 }
-
 
 /*void createAndFill(String song_text ){
   File myFile = SD.open("/music_sheets/example.txt", FILE_WRITE);
@@ -1024,25 +987,30 @@ int FillArray(String song_text ){
   for (int k=0; k<((song_text.length())-1); k=k+3){
 
     //1.check input
-    if(song_text[k]!='A' && song_text[k]!='B' && song_text[k]!='C' 
+    if((song_text[k]!='A' && song_text[k]!='B' && song_text[k]!='C' 
       && song_text[k]!='D' && song_text[k]!='E' && song_text[k]!='F' 
-      && song_text[k]!='G' && (song_text[k]!='N') && (k != 0 && song_text[k-1] != ',')){
-        bot.sendMessage(current_chat_id, "invalid input, please enter another one!", "");
+      && song_text[k]!='G' && song_text[k]!='N') || (k != 0 && song_text[k-1] != ',')){
+        bot.sendMessage(current_chat_id, "invalid input, \nplease enter valid input or go back to menu by typing 'Go back'!", "");
         return -1;
     }
     printf("current index: %d\n", k );
     //if it starts with N then most likely the user inserted NULL
     // 2.update array: there are two options, either the user entered a character A/B/C/..., or NULL, 
     if(song_text[k] != 'N'){
+      Serial.println("othen than N");
       // A/B/C/...
       // check if note is long or short
       if(song_text[k+1] == '1'){
         my_notes[j]= String(song_text[k]);
-        //printf("current character:%s\n",my_notes[j]);
+        printf("current character:%s\n",my_notes[j]);
       }
       else if(song_text[k+1] == '2'){
         my_notes[j]= "L" + String(song_text[k]);
-        //printf("current character:%s\n",my_notes[j]);
+        printf("current character:%s\n",my_notes[j]);
+      }
+      else{
+        bot.sendMessage(current_chat_id, "invalid input, \nplease enter valid input or go back to menu by typing 'Go back'!", "");
+        return -1;
       }
     }
     else{
