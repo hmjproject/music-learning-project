@@ -224,12 +224,21 @@ void handleNewMessages(int numNewMessages) {
         // else{
         //   bot.sendMessage(chat_id, "invalid input , please enter another one !", "");
         // }
-        while(!read_user_song());
-        m_state = PLAYING_SONG;
-        file_name = "/music_sheets/example.txt";
-        start = true;
-        finished = false;
-        b_state = STATS;
+        int ret_val = 0;
+        while(!ret_val){
+          ret_val = read_user_song();
+        }
+        if(ret_val == 2){
+          bot_print_menu(chat_id);
+          b_state = INSTRUCTION;
+        }
+        else{
+          m_state = PLAYING_SONG;
+          file_name = "/music_sheets/example.txt";
+          start = true;
+          finished = false;
+          b_state = STATS;
+        }
 
       }
       else if(text == "go back"){
@@ -439,6 +448,9 @@ int read_user_song(){
   printf("before if\n ");
   if(num_of_messages == 1){
     song_text = bot.messages[0].text;
+    if(song_text == "Go back"){
+      return 2;
+    }
     int filled_arr = FillArray(song_text);
     if(filled_arr == -1){
       return 0;
@@ -930,9 +942,13 @@ int FillArray(String song_text ){
     }
     j++;
     if(j>12){
-      bot.sendMessage(current_chat_id, "long input, please enter another one!", "");
+      bot.sendMessage(current_chat_id, "Long input, \nplease enter valid input or go back to menu by typing 'Go back'!", "");
       return -1;
     }
+  }
+  if(j<12){
+    bot.sendMessage(current_chat_id, "Short input, \nplease enter valid input or go back to menu by typing 'Go back'!", "");
+    return -1;
   }
   my_notes[j] = "END";
   return 0;
