@@ -89,6 +89,7 @@ Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
 void play_music();
 void read_touch_sensors();
 int read_user_song();
+void check_sd_card_status();
 // ----- wifi funcs -----
 void check_wifi_connection();
 void reconnect_to_wifi();
@@ -101,6 +102,7 @@ int get_pixel(String note);
 void turn_off_lights();
 void turn_lights_red();
 void turn_lights_green();
+void turn_lights_emerald();
 void turn_pixel_red(int pixel_num);
 void turn_pixel_blue(int pixel_num);
 void turn_pixel_green(int pixel_num);
@@ -408,10 +410,7 @@ void setup() {
 
   //------------------- serial --------------------
   Serial.begin(115200);
-  bool sd_begin = SD.begin(SD_CS);
-  while(sd_begin == 0){
-    turn_lights_red();
-  }
+  check_sd_card_status();
 
   //--------------- audio ------------------------
   audio.setPinout(I2S_BCLK, I2S_LRC, I2S_DOUT);
@@ -442,6 +441,7 @@ void loop()
 {
   audio.loop();
   check_wifi_connection();
+  check_sd_card_status();
 
   // 
   if(m_state == WAITING_FOR_COMMANDS){
@@ -721,6 +721,13 @@ void turn_off_lights(){
 void turn_lights_red(){
   for(int i = 0; i < 8; i++){
     pixels.setPixelColor(i, pixels.Color(100, 0, 0));
+    pixels.show();
+  }
+}
+
+void turn_lights_emerald(){
+  for(int i = 0; i < 8; i++){
+    pixels.setPixelColor(i, pixels.Color(100, 150, 0));
     pixels.show();
   }
 }
@@ -1049,3 +1056,12 @@ int FillArray(String song_text ){
 //     printf("%s\n", my_notes[i]);
 //   }
 // }
+
+void check_sd_card_status(){
+  bool sd_begin = SD.begin(SD_CS);
+  while(sd_begin == 0){
+    turn_lights_emerald();
+    sd_begin = SD.begin(SD_CS);
+  }
+
+}
