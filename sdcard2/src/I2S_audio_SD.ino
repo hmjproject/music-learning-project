@@ -360,9 +360,9 @@ void handleNewMessages(int numNewMessages) {
       if(text == "get statistics📉")
       {
        double st1=(wrong_notes/12)*100;
-        printf("st1 is: %f\n",st1);
+        // printf("st1 is: %f\n",st1);
         double st2=(delayed_notes/12)*100;
-        printf("st2 is: %f\n",st2);
+        // printf("st2 is: %f\n",st2);
         String message = "Your stats:\nWrong notes: " + String(st1,3) +" ❌"+"\nDelayed notes: " + String(st2,3) + " ⏰";
         bot.sendMessage(chat_id, message, "");
         String comment = pickComment();
@@ -408,7 +408,10 @@ void setup() {
 
   //------------------- serial --------------------
   Serial.begin(115200);
-  SD.begin(SD_CS);
+  bool sd_begin = SD.begin(SD_CS);
+  while(sd_begin == 0){
+    turn_lights_red();
+  }
 
   //--------------- audio ------------------------
   audio.setPinout(I2S_BCLK, I2S_LRC, I2S_DOUT);
@@ -481,7 +484,7 @@ void loop()
       // is the right note pressed?
       for(int i = 0; i < 8; i++){
         if(touch_sensor_val[i]){
-          printf("in sensor %d\n",i);
+          // printf("in sensor %d\n",i);
           play_note(i);
 
         }
@@ -511,7 +514,7 @@ int read_user_song(){
       return 0;
     }
     createNewSongFile();
-    printArray();
+    // printArray();
     return 1;
   }
   else{
@@ -521,7 +524,7 @@ int read_user_song(){
 }
 
 void playTone(const char *file_name){
-  printf("giong to start playing music\n");
+  // printf("giong to start playing music\n");
   // pressed = true;
   audio.connecttoFS(SD,file_name);
   audio.loop();
@@ -567,8 +570,8 @@ void play_music(){
       next_note_string = current_file.readStringUntil('\n');
       int next_note_pixel = get_pixel(next_note_string);
       current_pixel = get_pixel(current_note_string);
-      printf("current note: %s\n",current_note_string);
-      printf("next note: %s\n", next_note_string);
+      // printf("current note: %s\n",current_note_string);
+      // printf("next note: %s\n", next_note_string);
       if(current_note_string == "NULL\r"){
         turn_off_lights();
         current_pixel = 20;
@@ -581,25 +584,22 @@ void play_music(){
         current_pixel = 20;
         audio.stopSong();
         current_file.close();
-        // printf("wrong note number ----------------> %f\n",wrong_notes);
-        // printf("delayed note number ----------------> %f\n",delayed_notes);
-
       }
 
       if(current_note_string == "End\r"){
         turn_off_lights();
       }
       else if(next_note_pixel == current_pixel){
-        printf("turning pixels blue, index: %d, next_note: %d, current: %d\n",index11, next_note_pixel, current_pixel);
+        // printf("turning pixels blue, index: %d, next_note: %d, current: %d\n",index11, next_note_pixel, current_pixel);
         
         //if current pixel and next pixel are the same turn pixel blue
         turn_pixel_blue(next_note_pixel);
       }
       else{
-        printf("turning current pixel green, %d\n",index11);
+        // printf("turning current pixel green, %d\n",index11);
         turn_pixel_green(current_pixel);
         if(next_note_string != "END\r"){
-          printf("turning next pixel red, %d\n",index11);
+          // printf("turning next pixel red, %d\n",index11);
           //turn current pixel green
           turn_pixel_red(next_note_pixel);
         }
@@ -625,11 +625,8 @@ void play_music(){
       read_touch_sensors();
       // is the right note pressed?
       if(touch_sensor_val[current_pixel]){
-        printf("current note was played!\n");
         // play note
         play_note(current_pixel);
-        printf("if 11111111111111111111111111111111\n");
-
         // update that note has been read
         current_note_played = 1;
       }
@@ -643,12 +640,10 @@ void play_music(){
       if(touch_sensor_val[current_pixel]){
         // play note
         play_note(current_pixel);
-        // printf("if 22222222222222222222222222\n");
 
         // update that note has been played
         current_note_played = 1;
         delayed_notes++;
-        // printf("delayed time: %d\n",currentMillis - note_read_millis);
       }
       else{
         for(int i = 0; i < 8; i++){
@@ -659,10 +654,8 @@ void play_music(){
             if(last_played_wrong_note != -1){
               continue;
             }
-            // printf("got wrong note, %d\n", i);
             // play note that was pressed
             play_note(i);
-            // printf("if 22222222222333333333333333333333\n");
 
             // update wrong notes number
             wrong_notes++;
@@ -687,10 +680,8 @@ void play_music(){
           if(last_played_wrong_note != -1){
             continue;
           }
-          // printf("got wrong note, %d\n", i);
           // play note that was pressed
           play_note(i);
-          // printf("if 3333333333333333333333333\n");
 
           // update wrong notes number
           wrong_notes++;
@@ -705,7 +696,7 @@ void reconnect_to_wifi(){
   while (WiFi.status()  != WL_CONNECTED) {
     delay(1000);
     // Serial.print(".");
-    printf("reconnecting...\n");
+    Serial.println("reconnecting...\n");
     delay(300);
   }
 }
@@ -997,7 +988,7 @@ void createNewSongFile(){
 
 int FillArray(String song_text ){
   int j =0;
-  printf("len of song:%d\n",song_text.length() );
+  // printf("len of song:%d\n",song_text.length() );
   for (int k=0; k<((song_text.length())-1); k=k+3){
 
     //1.check input
@@ -1007,7 +998,7 @@ int FillArray(String song_text ){
         bot.sendMessage(current_chat_id, "invalid input, \nplease enter valid input or go back to menu by typing 'Go back'!", "");
         return -1;
     }
-    printf("current index: %d\n", k );
+    // printf("current index: %d\n", k );
     //if it starts with N then most likely the user inserted NULL
     // 2.update array: there are two options, either the user entered a character A/B/C/..., or NULL, 
     if(song_text[k] != 'N'){
@@ -1016,11 +1007,11 @@ int FillArray(String song_text ){
       // check if note is long or short
       if(song_text[k+1] == '1'){
         my_notes[j]= String(song_text[k]);
-        printf("current character:%s\n",my_notes[j]);
+        // printf("current character:%s\n",my_notes[j]);
       }
       else if(song_text[k+1] == '2'){
         my_notes[j]= "L" + String(song_text[k]);
-        printf("current character:%s\n",my_notes[j]);
+        // printf("current character:%s\n",my_notes[j]);
       }
       else{
         bot.sendMessage(current_chat_id, "invalid input, \nplease enter valid input or go back to menu by typing 'Go back'!", "");
@@ -1051,11 +1042,10 @@ int FillArray(String song_text ){
   }
   my_notes[j] = "END";
   return 0;
-  //printf("after end");
 }
 
-void printArray(){
-  for (int i=0 ; i < 13; i++){
-    printf("%s\n", my_notes[i]);
-  }
-}
+// void printArray(){
+//   for (int i=0 ; i < 13; i++){
+//     printf("%s\n", my_notes[i]);
+//   }
+// }
