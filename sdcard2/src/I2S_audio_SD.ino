@@ -52,7 +52,7 @@ int index11 = 0;
 #define C_TOUCH_PIN     27
 
 //touch threshold
-const int threshold = 35;
+const int threshold = 40;
 // telegramMessage message = bot.getUpdates();
 
 //touch sensors array
@@ -121,6 +121,7 @@ int start = true;
 int finished = false;
 File current_file;
 int current_pixel = 0;
+int next_note_pixel = 20;
 String file_name = "";
 bool pressed = true;
 
@@ -207,15 +208,15 @@ void handleNewMessages(int numNewMessages) {
       }
       else if (text == "Play music 🎼") {
         String print_text = "Which song would you like to play❓\n";
-        String keyboardJson = "[[\"DoReMi\",\"Happy Birthday\" ,\"Old Macdonalds\",\"my song\", \"play freely\"],[ \"Go back 🔙\"]]";
+        String keyboardJson = "[[\"DoReMi\",\"Happy Birthday\" ,\"Old Macdonalds\",\"my song\"],[ \"Go back 🔙\"]]";
         bot.sendMessageWithReplyKeyboard(chat_id, print_text, "", keyboardJson, true); 
         b_state = CHOOSE_MUSIC;
       }
       else if(text == "Game Instructions 🎹"){
         String print_text = "Welcome to our interactive piano learning game! 🎹 \nTo get started, simply select a song of your choice by clicking on 'Choose Song.'. \n";
-        print_text += "Once you've made your selection, \nthe lights will illuminate following these guidelines:\n";
-        print_text += "🟢 Green: Indicates the note you should play. \n🔴 Red: Signals the next note to be played.\n";
-        print_text += "🔵 Blue: Highlights when the current note and the next note are identical. \nEnjoy!";
+        print_text += "Once you've made your selection, \nthe lights will illuminate following these guidelines:\n\n";
+        print_text += "🟢 Green: Indicates the note you should play. \n\n🔴 Red: Signals the next note to be played.\n\n";
+        print_text += "🔵 Blue: Highlights when the current note and the next note are identical. the light will turn pink for a short time indicating that you must lift your finger.\n\nEnjoy!";
         String keyboardJson = "[[ \"Go back 🔙\"]]";
         bot.sendMessageWithReplyKeyboard(chat_id, print_text, "", keyboardJson, true); 
         b_state = GAME_INSTR;
@@ -295,11 +296,6 @@ void handleNewMessages(int numNewMessages) {
       else if(text == "Go back 🔙"){
         bot_print_menu(chat_id);
         b_state = INSTRUCTION;
-      }
-      else if(text == "play freely"){
-        b_state = CHOOSE_MUSIC;
-        m_state = PLAY_FREELY;
-
       }
       else{
         bot.sendMessage(chat_id, "Please choose a valid option", "");
@@ -439,9 +435,9 @@ void setup() {
 
 void loop()
 {
-  audio.loop();
+  //audio.loop();
   check_wifi_connection();
-  check_sd_card_status();
+  // check_sd_card_status();
 
   // 
   if(m_state == WAITING_FOR_COMMANDS){
@@ -476,21 +472,21 @@ void loop()
   /*
   for debug! we can't support this since we can't accept messages when playing music
   */
-  if(m_state == PLAY_FREELY){
-    unsigned long currentMillis = millis();
-    if ( (currentMillis - touch_sensor_millis_1 > 20) ) {
-      touch_sensor_millis = currentMillis;
-      read_touch_sensors();
-      // is the right note pressed?
-      for(int i = 0; i < 8; i++){
-        if(touch_sensor_val[i]){
-          // printf("in sensor %d\n",i);
-          play_note(i);
+  // if(m_state == PLAY_FREELY){
+  //   unsigned long currentMillis = millis();
+  //   if ( (currentMillis - touch_sensor_millis_1 > 20) ) {
+  //     touch_sensor_millis = currentMillis;
+  //     read_touch_sensors();
+  //     // is the right note pressed?
+  //     for(int i = 0; i < 8; i++){
+  //       if(touch_sensor_val[i]){
+  //         // printf("in sensor %d\n",i);
+  //         play_note(i);
 
-        }
-      }
-    }
-  }
+  //       }
+  //     }
+  //   }
+  // }
   // if(m_state == DONE_PLAYING_SONG){
   //   //ask if he wants to 
   // }
@@ -568,7 +564,7 @@ void play_music(){
       }
       // get next note ready
       next_note_string = current_file.readStringUntil('\n');
-      int next_note_pixel = get_pixel(next_note_string);
+      next_note_pixel = get_pixel(next_note_string);
       current_pixel = get_pixel(current_note_string);
       // printf("current note: %s\n",current_note_string);
       // printf("next note: %s\n", next_note_string);
@@ -627,6 +623,7 @@ void play_music(){
       if(touch_sensor_val[current_pixel]){
         // play note
         play_note(current_pixel);
+        // turn_pixel_pink(current_pixel);
         // update that note has been read
         current_note_played = 1;
       }
@@ -640,9 +637,10 @@ void play_music(){
       if(touch_sensor_val[current_pixel]){
         // play note
         play_note(current_pixel);
-
+        // turn_pixel_pink(current_pixel);
         // update that note has been played
         current_note_played = 1;
+
         delayed_notes++;
       }
       else{
@@ -665,15 +663,23 @@ void play_music(){
       }
     }
 
+    if(currentMillis - note_read_millis > 1100 && next_note_pixel == current_pixel){
+      turn_pixel_pink(current_pixel);
+    }
 
     //once the note has been played, make sure no wrong note is played every 30ms
-    if (current_note_played && currentMillis - touch_sensor_millis > 30 ) {
+    if (current_note_played && currentMillis - touch_sensor_millis > 20 ) {
       touch_sensor_millis = currentMillis;
       read_touch_sensors();
+
       // is the right note pressed?
       
       for(int i = 0; i < 8; i++){
         if(i == current_pixel){
+          if(!touch_sensor_val[i] && currentMillis - note_read_millis > 500){
+            Serial.println("finger removed");
+            audio.stopSong();
+          }
           continue;
         }
         if(touch_sensor_val[i]){
@@ -886,6 +892,14 @@ void turn_pixel_green(int pixel_num){
   pixels.show();
 }
 
+void turn_pixel_pink(int pixel_num){
+  if(pixel_num == 20){
+    return;
+  }
+  pixels.setPixelColor(pixel_num, pixels.Color(255, 182, 193));
+  pixels.show();
+}
+
 bool _is_long_note(){
   if(current_note_string == "LD\r" || current_note_string == "LE\r" || current_note_string == "LF\r"
    || current_note_string == "LG\r" || current_note_string == "LA\r" || current_note_string == "LB\r" 
@@ -896,6 +910,9 @@ bool _is_long_note(){
 }
 
 String choosePhoto(){
+  if(file_name == "/music_sheets/OldMac.txt"){
+    wrong_notes = wrong_notes/2 -1;
+  }
   if(wrong_notes == 0){
     return p12mn12;
   }
