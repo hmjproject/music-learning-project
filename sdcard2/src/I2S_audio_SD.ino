@@ -357,9 +357,12 @@ void handleNewMessages(int numNewMessages) {
     else if(b_state == STATS_MENU){
       if(text == "get statistics📉")
       {
-       double st1=(wrong_notes/12)*100;
+        double st1=(wrong_notes/12)*100;
         // printf("st1 is: %f\n",st1);
         double st2=(delayed_notes/12)*100;
+        if(file_name == "/music_sheets/OldMac.txt"){
+          double st2=(delayed_notes/26)*100;
+        }
         // printf("st2 is: %f\n",st2);
         String message = "Your stats:\nWrong notes: " + String(st1,3) +" ❌"+"\nDelayed notes: " + String(st2,3) + " ⏰";
         bot.sendMessage(chat_id, message, "");
@@ -466,6 +469,8 @@ void loop()
       String keyboardJson = "[[\"get statistics📉\" ,\"Go back to menu🔙\" ]]";
       bot.sendMessageWithReplyKeyboard(current_chat_id, welcome, "", keyboardJson, true); 
       b_state = STATS_MENU;
+      audio.stopSong();
+
     }
 
   }
@@ -527,7 +532,9 @@ void playTone(const char *file_name){
 }
 
 void play_music(){
-  audio.loop();
+  if(!start){
+    audio.loop();
+  }
     unsigned long currentMillis = millis();
     //start -> get params ready + open file
     if(start){
@@ -569,6 +576,7 @@ void play_music(){
       // printf("current note: %s\n",current_note_string);
       // printf("next note: %s\n", next_note_string);
       if(current_note_string == "NULL\r"){
+        Serial.println("got null");
         turn_off_lights();
         current_pixel = 20;
         
@@ -578,13 +586,16 @@ void play_music(){
         finished = true;
         m_state = WAITING_FOR_COMMANDS;
         current_pixel = 20;
+        int c = millis();
+        while(millis() - c < 200);
+        
         audio.stopSong();
         current_file.close();
       }
 
-      if(current_note_string == "End\r"){
-        turn_off_lights();
-      }
+      // if(current_note_string == "End\r"){
+      //   turn_off_lights();
+      // }
       else if(next_note_pixel == current_pixel){
         // printf("turning pixels blue, index: %d, next_note: %d, current: %d\n",index11, next_note_pixel, current_pixel);
         
@@ -663,7 +674,7 @@ void play_music(){
       }
     }
 
-    if(currentMillis - note_read_millis > 1100 && next_note_pixel == current_pixel){
+    if(currentMillis - note_read_millis > 1100 && next_note_pixel == current_pixel && next_note_string != "NULL\r"){
       turn_pixel_pink(current_pixel);
     }
 
@@ -685,6 +696,13 @@ void play_music(){
         if(touch_sensor_val[i]){
           if(last_played_wrong_note != -1){
             continue;
+          }
+          if(current_note_string == "NULL\r" && currentMillis - note_read_millis < 500){
+            Serial.println("in null wrong note");
+            continue;
+          }
+          if(current_note_string == "NULL\r"){
+            Serial.println("playing note in null");
           }
           // play note that was pressed
           play_note(i);
@@ -911,7 +929,8 @@ bool _is_long_note(){
 
 String choosePhoto(){
   if(file_name == "/music_sheets/OldMac.txt"){
-    wrong_notes = wrong_notes/2 -1;
+    wrong_notes = (wrong_notes==0)?0:wrong_notes/2-1;
+    wrong_notes = (wrong_notes<0)?0:wrong_notes;
   }
   if(wrong_notes == 0){
     return p12mn12;
