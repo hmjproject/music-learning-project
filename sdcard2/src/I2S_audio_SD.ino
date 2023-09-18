@@ -42,14 +42,14 @@ int index11 = 0;
 #define I2S_LRC       26
 
 //touch
-#define C_TOUCH_PIN     12
-#define D_TOUCH_PIN     13
-#define E_TOUCH_PIN     14
-#define F_TOUCH_PIN     33
-#define G_TOUCH_PIN     32
-#define A_TOUCH_PIN     15
-#define B_TOUCH_PIN     4
-#define D5_TOUCH_PIN     27
+#define C5_TOUCH_PIN     12
+#define B_TOUCH_PIN     13
+#define A_TOUCH_PIN     14
+#define G_TOUCH_PIN     33
+#define F_TOUCH_PIN     32
+#define E_TOUCH_PIN     15
+#define D_TOUCH_PIN     4
+#define C_TOUCH_PIN     27
 
 //touch threshold
 const int threshold = 35;
@@ -205,7 +205,7 @@ void handleNewMessages(int numNewMessages) {
       }
       else if (text == "Play music 🎼") {
         String print_text = "Which song would you like to play❓\n";
-        String keyboardJson = "[[\"DoReMi\",\"Happy Birthday\" ,\"Old Macdonalds\",\"my song\"],[ \"Go back 🔙\"]]";
+        String keyboardJson = "[[\"DoReMi\",\"Happy Birthday\" ,\"Old Macdonalds\",\"my song\", \"play freely\"],[ \"Go back 🔙\"]]";
         bot.sendMessageWithReplyKeyboard(chat_id, print_text, "", keyboardJson, true); 
         b_state = CHOOSE_MUSIC;
       }
@@ -473,21 +473,21 @@ void loop()
   /*
   for debug! we can't support this since we can't accept messages when playing music
   */
-  // if(m_state == PLAY_FREELY){
-  //   unsigned long currentMillis = millis();
-  //   if ( (currentMillis - touch_sensor_millis_1 > 20) ) {
-  //     touch_sensor_millis = currentMillis;
-  //     read_touch_sensors();
-  //     // is the right note pressed?
-  //     for(int i = 0; i < 8; i++){
-  //       if(touch_sensor_val[i]){
-  //         printf("in sensor %d\n",i);
-  //         play_note(i);
+  if(m_state == PLAY_FREELY){
+    unsigned long currentMillis = millis();
+    if ( (currentMillis - touch_sensor_millis_1 > 20) ) {
+      touch_sensor_millis = currentMillis;
+      read_touch_sensors();
+      // is the right note pressed?
+      for(int i = 0; i < 8; i++){
+        if(touch_sensor_val[i]){
+          printf("in sensor %d\n",i);
+          play_note(i);
 
-  //       }
-  //     }
-  //   }
-  // }
+        }
+      }
+    }
+  }
   // if(m_state == DONE_PLAYING_SONG){
   //   //ask if he wants to 
   // }
@@ -749,21 +749,21 @@ void read_touch_sensors(){
   int G_touchValue = touchRead(G_TOUCH_PIN);
   int A_touchValue = touchRead(A_TOUCH_PIN);
   int B_touchValue = touchRead(B_TOUCH_PIN);
-  int D5_touchValue = touchRead(D5_TOUCH_PIN);
-  touch_sensor_val[0] = (C_touchValue<threshold)? true : false;
-  touch_sensor_val[1] = (D_touchValue<threshold)? true : false;
-  touch_sensor_val[2] = (E_touchValue<threshold)? true : false;
-  touch_sensor_val[3] = (F_touchValue<threshold)? true : false;
-  touch_sensor_val[4] = (G_touchValue<threshold)? true : false;
-  touch_sensor_val[5] = (A_touchValue<threshold)? true : false;
-  touch_sensor_val[6] = (B_touchValue<threshold)? true : false;
-  touch_sensor_val[7] = (D5_touchValue<15)? true : false;
+  int D5_touchValue = touchRead(C5_TOUCH_PIN);
+  touch_sensor_val[7] = (C_touchValue<threshold)? true : false;
+  touch_sensor_val[6] = (D_touchValue<threshold)? true : false;
+  touch_sensor_val[5] = (E_touchValue<threshold)? true : false;
+  touch_sensor_val[4] = (F_touchValue<threshold)? true : false;
+  touch_sensor_val[3] = (G_touchValue<threshold)? true : false;
+  touch_sensor_val[2] = (A_touchValue<threshold)? true : false;
+  touch_sensor_val[1] = (B_touchValue<threshold)? true : false;
+  touch_sensor_val[0] = (D5_touchValue<threshold)? true : false;
   
 }
 
 void play_note(int note_number){
   
-  if(note_number == 0){
+  if(note_number == 7){
     if(long_note){
       playTone("C_long_major.wav");
     }
@@ -771,7 +771,7 @@ void play_note(int note_number){
       playTone("C_major.wav");
     }
   }
-  else if(note_number == 1){
+  else if(note_number == 6){
     if(long_note){
       playTone("D_long_major.wav");
     }
@@ -779,7 +779,7 @@ void play_note(int note_number){
       playTone("D_major.wav");
     }
   }
-  else if(note_number == 2){
+  else if(note_number == 5){
     if(long_note){
       playTone("E_long_major.wav");
     }
@@ -787,7 +787,7 @@ void play_note(int note_number){
       playTone("E_major.wav");
     }
   }
-  else if(note_number == 3){
+  else if(note_number == 4){
     if(long_note){
       playTone("F_long_major.wav");
     }
@@ -795,7 +795,7 @@ void play_note(int note_number){
       playTone("F_major.wav");
     }
   }
-  else if(note_number == 4){
+  else if(note_number == 3){
     if(long_note){
       playTone("G_long_major.wav");
     }
@@ -803,7 +803,7 @@ void play_note(int note_number){
       playTone("G_major.wav");
     }
   }
-  else if(note_number == 5){
+  else if(note_number == 2){
     if(long_note){
       playTone("A_long_major.wav");
     }
@@ -811,7 +811,7 @@ void play_note(int note_number){
       playTone("A_major.wav");
     }
   }
-  else if(note_number == 6){
+  else if(note_number == 1){
     if(long_note){
       playTone("B_long_major.wav");
     }
@@ -819,7 +819,7 @@ void play_note(int note_number){
       playTone("B_major.wav");
     }
   }
-  else if(note_number == 7){
+  else if(note_number == 0){
     if(long_note){
       playTone("D5_long_major.wav");
     }
@@ -833,28 +833,28 @@ void play_note(int note_number){
 int get_pixel(String note){
   int pexil_to_ret = 0;
   if(note == "C\r" || note == "LC\r"){
-    pexil_to_ret = 0;
+    pexil_to_ret = 7;
   }
   else if(note == "D\r" || note == "LD\r"){
-    pexil_to_ret = 1;
-  }
-  else if(note == "E\r" || note == "LE\r"){
-    pexil_to_ret = 2;
-  }
-  else if(note == "F\r" || note == "LF\r"){
-    pexil_to_ret = 3;
-  }
-  else if(note == "G\r" || note == "LG\r"){
-    pexil_to_ret = 4;
-  }
-  else if(note == "A\r" || note == "LA\r"){
-    pexil_to_ret = 5;
-  }
-  else if(note == "B\r" || note == "LB\r"){
     pexil_to_ret = 6;
   }
+  else if(note == "E\r" || note == "LE\r"){
+    pexil_to_ret = 5;
+  }
+  else if(note == "F\r" || note == "LF\r"){
+    pexil_to_ret = 4;
+  }
+  else if(note == "G\r" || note == "LG\r"){
+    pexil_to_ret = 3;
+  }
+  else if(note == "A\r" || note == "LA\r"){
+    pexil_to_ret = 2;
+  }
+  else if(note == "B\r" || note == "LB\r"){
+    pexil_to_ret = 1;
+  }
   else if(note == "H\r" || note == "LH\r"){
-    pexil_to_ret = 7;
+    pexil_to_ret = 0;
   }
   else{
     pexil_to_ret = 20;
