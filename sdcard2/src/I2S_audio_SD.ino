@@ -550,7 +550,7 @@ void play_music(){
       index11 = 0;
     }
 
-    if((currentMillis - note_read_millis > 1200 && !long_note) || (long_note && currentMillis - note_read_millis > 2400) ){
+    if((currentMillis - note_read_millis > 1300 && !long_note) || (long_note && currentMillis - note_read_millis > 2600) ){
       //reset long note param
       index11++;
       long_note = false;
@@ -1050,11 +1050,18 @@ int FillArray(String song_text ){
       // check if note is long or short
       if(song_text[k+1] == '1'){
         my_notes[j]= String(song_text[k]);
-        // printf("current character:%s\n",my_notes[j]);
       }
       else if(song_text[k+1] == '2'){
         my_notes[j]= "L" + String(song_text[k]);
-        // printf("current character:%s\n",my_notes[j]);
+      }
+      else if(song_text[k+1]== '5' && song_text[k]== 'C'){
+        if(song_text[k+2] == '1'){
+          my_notes[j]= "H";
+        }
+        else if(song_text[k+2] == '2'){
+          my_notes[j]= "LH";
+        }
+        k++;
       }
       else{
         bot.sendMessage(current_chat_id, "invalid input, \nplease enter valid input or go back to menu by typing 'Go back'!", "");
