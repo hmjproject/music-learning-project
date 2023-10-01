@@ -166,10 +166,6 @@ void handleNewMessages(int numNewMessages) {
     // Chat id of the requester
     String chat_id = String(bot.messages[i].chat_id);
     current_chat_id = chat_id;
-    // if (chat_id != CHAT_ID){
-    //   bot.sendMessage(chat_id, "Unauthorized user", "");
-    //   continue;
-    // }
     
     // Print the received message
     String text = bot.messages[i].text;
@@ -350,13 +346,18 @@ void handleNewMessages(int numNewMessages) {
     else if(b_state == STATS_MENU){
       if(text == "get statistics📉")
       {
-        double st1=(wrong_notes/12)*100;
-        // printf("st1 is: %f\n",st1);
+        double st1=0;
+        printf("wrong notes num : %f\n",wrong_notes);
         double st2=(delayed_notes/12)*100;
         if(file_name == "/music_sheets/OldMac.txt"){
           double st2=(delayed_notes/26)*100;
+          wrong_notes = (wrong_notes==0)?0:(wrong_notes-2)/2;
+          wrong_notes = (wrong_notes<0)?0:wrong_notes;
+          st1=((wrong_notes)/24)*100;
         }
-        // printf("st2 is: %f\n",st2);
+        else{
+          st1=(wrong_notes/12)*100;
+        }
         String message = "Your stats:\nWrong notes: " + String(st1,3) +" ❌"+"\nDelayed notes: " + String(st2,3) + " ⏰";
         bot.sendMessage(chat_id, message, "");
         String comment = pickComment();
@@ -407,19 +408,13 @@ void setup() {
   //--------------- audio ------------------------
   audio.setPinout(I2S_BCLK, I2S_LRC, I2S_DOUT);
   audio.setVolume(volume); // range 0...21 - This is not amplifier gain, but controlling the level of output amplitude. 
-  // audio.connecttoFS(SD, "123_u8.wav"); // a file with the proper name must be placed in root folder of SD card (formatted FAT32, file name max 8 chars no spaces)
-  // audio.stopSong();
+
 
   //----------------- Connect to Wi-Fi ----------------------
   WiFi.mode(WIFI_STA);
-  // WiFi.begin(ssid, password);
   check_wifi_connection();
   client.setCACert(TELEGRAM_CERTIFICATE_ROOT); // Add root certificate for api.telegram.org
 
-  // while (WiFi.status() != WL_CONNECTED) {
-  //   delay(1000);
-  //   Serial.println("Connecting to WiFi..");
-  // }
   // Print ESP32 Local IP Address
   Serial.println(WiFi.localIP());
 
@@ -431,11 +426,8 @@ void setup() {
 
 void loop()
 {
-  //audio.loop();
   check_wifi_connection();
-  // check_sd_card_status();
 
-  // 
   if(m_state == WAITING_FOR_COMMANDS){
     for(int i = 0; i < 8; i++){
       pixels.setPixelColor(i, pixels.Color(0, 0, 0));
@@ -467,27 +459,6 @@ void loop()
     }
 
   }
-  /*
-  for debug! we can't support this since we can't accept messages when playing music
-  */
-  // if(m_state == PLAY_FREELY){
-  //   unsigned long currentMillis = millis();
-  //   if ( (currentMillis - touch_sensor_millis_1 > 20) ) {
-  //     touch_sensor_millis = currentMillis;
-  //     read_touch_sensors();
-  //     // is the right note pressed?
-  //     for(int i = 0; i < 8; i++){
-  //       if(touch_sensor_val[i]){
-  //         // printf("in sensor %d\n",i);
-  //         play_note(i);
-
-  //       }
-  //     }
-  //   }
-  // }
-  // if(m_state == DONE_PLAYING_SONG){
-  //   //ask if he wants to 
-  // }
   
 }
 
@@ -508,7 +479,6 @@ int read_user_song(){
       return 0;
     }
     createNewSongFile();
-    // printArray();
     return 1;
   }
   else{
@@ -518,8 +488,6 @@ int read_user_song(){
 }
 
 void playTone(const char *file_name){
-  // printf("giong to start playing music\n");
-  // pressed = true;
   audio.connecttoFS(SD,file_name);
   audio.loop();
 }
@@ -586,20 +554,14 @@ void play_music(){
         current_file.close();
       }
 
-      // if(current_note_string == "End\r"){
-      //   turn_off_lights();
-      // }
+
       else if(next_note_pixel == current_pixel){
-        // printf("turning pixels blue, index: %d, next_note: %d, current: %d\n",index11, next_note_pixel, current_pixel);
-        
         //if current pixel and next pixel are the same turn pixel blue
         turn_pixel_blue(next_note_pixel);
       }
       else{
-        // printf("turning current pixel green, %d\n",index11);
         turn_pixel_green(current_pixel);
         if(next_note_string != "END\r"){
-          // printf("turning next pixel red, %d\n",index11);
           //turn current pixel green
           turn_pixel_red(next_note_pixel);
         }
@@ -627,7 +589,6 @@ void play_music(){
       if(touch_sensor_val[current_pixel]){
         // play note
         play_note(current_pixel);
-        // turn_pixel_pink(current_pixel);
         // update that note has been read
         current_note_played = 1;
       }
@@ -712,7 +673,6 @@ void reconnect_to_wifi(){
   WiFi.begin(ssid, password);
   while (WiFi.status()  != WL_CONNECTED) {
     delay(1000);
-    // Serial.print(".");
     Serial.println("reconnecting...\n");
     delay(300);
   }
@@ -921,44 +881,41 @@ bool _is_long_note(){
 }
 
 String choosePhoto(){
-  if(file_name == "/music_sheets/OldMac.txt"){
-    wrong_notes = (wrong_notes==0)?0:wrong_notes/2-1;
-    wrong_notes = (wrong_notes<0)?0:wrong_notes;
-  }
-  if(wrong_notes == 0){
+
+  if((wrong_notes >= 0 && wrong_notes < 1)||wrong_notes<0){
     return p12mn12;
   }
-  else if (wrong_notes == 1){
+  else if (wrong_notes >= 1 && wrong_notes < 2){
     return p11mn12;
   }
-  else if (wrong_notes == 2){
+  else if (wrong_notes >= 2 && wrong_notes < 3){
     return p10mn12;
   }
-  else if (wrong_notes == 3){
+  else if (wrong_notes >= 3 && wrong_notes < 4){
     return p9mn12;
   }
-  else if (wrong_notes == 4){
+  else if (wrong_notes >= 4 && wrong_notes < 5){
     return p8mn12;
   }
-  else if (wrong_notes == 5){
+  else if (wrong_notes >= 5 && wrong_notes < 6){
     return p7mn12;
   }
-  else if (wrong_notes == 6){
+  else if (wrong_notes >= 6 && wrong_notes < 7){
     return p6mn12;
   }
-  else if (wrong_notes == 7){
+  else if (wrong_notes >= 7 && wrong_notes < 8){
     return p5mn12;
   }
-  else if (wrong_notes == 8){
+  else if (wrong_notes >= 8 && wrong_notes < 9){
     return p4mn12;
   }
-  else if (wrong_notes == 9){
+  else if (wrong_notes >= 9 && wrong_notes < 10){
     return p3mn12;
   }
-  else if (wrong_notes == 10){
+  else if (wrong_notes >= 10 && wrong_notes < 11){
     return p2mn12;
   }
-  else if (wrong_notes == 11){
+  else if (wrong_notes ==11){
     return p1mn12;
   }
   else{
@@ -1001,30 +958,9 @@ void createNewSongFile(){
   
 }
 
-/*void createAndFill(String song_text ){
-  File myFile = SD.open("/music_sheets/example.txt", FILE_WRITE);
-  //printf("get the massege :%s\n", song_text);
-  if(song_text.length() > 0 && song_text.length() < 25 ){  // # define 35 2*12+11 
-    //printf("len of song:%d\n",song_text.length() );
-    if(myFile){
-      for (int k=0 ; k<((song_text.length())-1) ;k=k+2){
-        if(song_text[k+1] == '1'){
-          myFile.println(song_text[k]);
-        }
-        else if(song_text[k+1] == '2'){
-          myFile.println("L" + song_text[k]);
-
-        }
-      }
-      myFile.println("END");
-    }
-    myFile.close();
-  }
-}*/
 
 int FillArray(String song_text ){
   int j =0;
-  // printf("len of song:%d\n",song_text.length() );
   for (int k=0; k<((song_text.length())-1); k=k+3){
 
     //1.check input
@@ -1034,7 +970,6 @@ int FillArray(String song_text ){
         bot.sendMessage(current_chat_id, "invalid input, \nplease enter valid input or go back to menu by typing 'Go back'!", "");
         return -1;
     }
-    // printf("current index: %d\n", k );
     //if it starts with N then most likely the user inserted NULL
     // 2.update array: there are two options, either the user entered a character A/B/C/..., or NULL, 
     if(song_text[k] != 'N'){
@@ -1087,11 +1022,6 @@ int FillArray(String song_text ){
   return 0;
 }
 
-// void printArray(){
-//   for (int i=0 ; i < 13; i++){
-//     printf("%s\n", my_notes[i]);
-//   }
-// }
 
 void check_sd_card_status(){
   bool sd_begin = SD.begin(SD_CS);
