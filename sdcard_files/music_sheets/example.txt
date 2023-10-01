@@ -1,0 +1,13 @@
+A
+LB
+NULL
+LA
+C
+G
+LF
+LG
+E
+LD
+A
+A
+END
