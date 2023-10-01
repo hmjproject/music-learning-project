@@ -12,12 +12,6 @@
 // network credentials
 const char* ssid = "CS_conference";
 const char* password = "openday23";
-// const char* ssid = "baba";
-// const char* password = "0502214066";
-// const char* ssid = "miral";
-// const char* password = "jessyj2772";
-// const char* ssid = "Hadeel";
-// const char* password = "1234hadeel";
 
 //Telegram BOT
 #define BOTtoken "6382002255:AAFPCttqq1v4URJGQbHBJ9fzRpcZedvYxaw"
