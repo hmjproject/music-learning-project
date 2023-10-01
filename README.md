@@ -28,7 +28,8 @@ To get started, simply select a song of your choice by clicking on 'Choose Song'
 
 ## Folder Description:  
 * Documentation: Wiring diagram.
-* 
+* sdcard_files: has WAV files and music sheets in sdcard_files/music_sheets/ directory.
+* music_learning_code/code/: has the source code.
 
 
 ## Arduino/ESP32 libraries used:
