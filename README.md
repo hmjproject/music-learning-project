@@ -41,5 +41,6 @@ To get started, simply select a song of your choice by clicking on 'Choose Song'
 * WiFiClientSecure.h
 * UniversalTelegramBot.h
 
+![pins](https://github.com/hmjproject/music-learning-project/assets/118805669/fcdfb49d-445b-4f38-883d-a486d6b061e2)
 
 
