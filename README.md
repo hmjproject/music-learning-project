@@ -41,6 +41,10 @@ To get started, simply select a song of your choice by clicking on 'Choose Song'
 * WiFiClientSecure.h
 * UniversalTelegramBot.h
 
+
+## poster:
+![project-poster](https://github.com/hmjproject/music-learning-project/assets/118805669/3b2d8ba2-5f3e-43f4-8295-3fb694ccaaa7)   
+
 ## Diagrams:    
 ![image](https://github.com/hmjproject/music-learning-project/assets/118805669/c9f5fda7-49c3-4654-9f2e-d6153d12cbb0)    
 
@@ -49,9 +53,6 @@ To get started, simply select a song of your choice by clicking on 'Choose Song'
 ## Pins:   
 ![pins](https://github.com/hmjproject/music-learning-project/assets/118805669/fcdfb49d-445b-4f38-883d-a486d6b061e2)
 
-
-## poster:
-![project-poster](https://github.com/hmjproject/music-learning-project/assets/118805669/3b2d8ba2-5f3e-43f4-8295-3fb694ccaaa7)
 
 
 
